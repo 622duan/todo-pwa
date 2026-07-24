@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>设置 · todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; background: linear-gradient(180deg, #F8FAFC 0%, #E8EDF3 100%); color: #0F172A; height: 100vh; overflow: hidden; }
+    /* status bar removed */
+    .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06); }
+    .scroll-area { height: calc(100vh - 80px); overflow-y: auto; padding: 0 20px 20px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#84A98C' } } } }
+  </script>
+</head>
+<body>
+  <div class="px-5 pt-3 pb-3">
+    <h1 class="text-[24px] font-bold tracking-tight">设置</h1>
+  </div>
+
+  <div class="scroll-area space-y-5">
+    <!-- Storage info -->
+    <section>
+      <p class="text-[11px] text-gray-500 uppercase tracking-widest font-semibold mb-2.5 px-1">数据</p>
+      <div class="glass rounded-[20px] p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center">
+              <i class="fas fa-database text-brand text-sm"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-[14px]">本地存储</p>
+              <p class="text-[11px] text-gray-500 mt-0.5" id="storageInfo">加载中...</p>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-gray-200/50 pt-3 space-y-2.5">
+          <button onclick="exportData()" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/40">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-file-export text-gray-500 w-5 text-center"></i>
+              <span class="text-[14px] font-medium">导出数据</span>
+            </div>
+            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+          </button>
+          <button onclick="document.getElementById('importFile').click()" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/40">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-file-import text-gray-500 w-5 text-center"></i>
+              <span class="text-[14px] font-medium">导入数据</span>
+            </div>
+            <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+          </button>
+          <input type="file" id="importFile" accept=".json" class="hidden">
+        </div>
+      </div>
+    </section>
+
+    <!-- Danger zone -->
+    <section>
+      <p class="text-[11px] text-gray-500 uppercase tracking-widest font-semibold mb-2.5 px-1">危险操作</p>
+      <div class="glass rounded-[20px] p-4 space-y-2.5">
+        <button onclick="resetTodayDone()" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/40">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-rotate-left text-amber-500 w-5 text-center"></i>
+            <span class="text-[14px] font-medium">重置今日完成状态</span>
+          </div>
+          <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+        </button>
+        <button onclick="clearAllTasks()" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/40">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-trash text-red-500 w-5 text-center"></i>
+            <span class="text-[14px] font-medium text-red-500">清空所有任务</span>
+          </div>
+          <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section>
+      <p class="text-[11px] text-gray-500 uppercase tracking-widest font-semibold mb-2.5 px-1">关于</p>
+      <div class="glass rounded-[20px] p-4 space-y-2">
+        <div class="flex items-center justify-between p-2">
+          <span class="text-[14px] font-medium">版本</span>
+          <span class="text-[12px] text-gray-500">v1.0.0</span>
+        </div>
+        <div class="flex items-center justify-between p-2">
+          <span class="text-[14px] font-medium">数据存储</span>
+          <span class="text-[12px] text-gray-500">本地 · 不上传</span>
+        </div>
+      </div>
+    </section>
+
+    <p class="text-center text-[11px] text-gray-400 py-3">— 让今天有迹可循 —</p>
+  </div>
+
+  <!-- Bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full px-3 py-2.5 flex items-center justify-between" style="border-radius: 999px;">
+      <button onclick="goHome()" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-house text-[15px]"></i>
+        <span class="text-[10px] font-medium">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-newspaper text-[15px]"></i>
+        <span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button onclick="goAll()" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-list text-[15px]"></i>
+        <span class="text-[10px] font-medium">全部</span>
+      </button>
+      <button class="flex flex-col items-center gap-0.5 text-ink px-2">
+        <i class="fas fa-gear text-[15px]"></i>
+        <span class="text-[10px] font-semibold">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'todo_tasks_v1';
+    const DONE_PREFIX = 'todo_done_';
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function loadTasks() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+
+    function updateStorageInfo() {
+      const tasks = loadTasks();
+      const done = JSON.parse(localStorage.getItem(DONE_PREFIX + today()) || '[]');
+      const totalSize = JSON.stringify({ tasks, done }).length;
+      const kb = (totalSize / 1024).toFixed(2);
+      document.getElementById('storageInfo').textContent = `${tasks.length} 个任务 · ${kb} KB`;
+    }
+
+    function exportData() {
+      const tasks = loadTasks();
+      const allDoneKeys = Object.keys(localStorage).filter(k => k.startsWith(DONE_PREFIX));
+      const doneData = {};
+      allDoneKeys.forEach(k => doneData[k] = localStorage.getItem(k));
+      const blob = new Blob([JSON.stringify({ tasks, doneData, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `todo-backup-${today()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('importFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (data.tasks && Array.isArray(data.tasks)) {
+            if (!confirm(`将导入 ${data.tasks.length} 个任务，覆盖现有数据。继续？`)) return;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.tasks));
+            if (data.doneData) {
+              Object.keys(data.doneData).forEach(k => localStorage.setItem(k, data.doneData[k]));
+            }
+            alert('导入成功！');
+            updateStorageInfo();
+          }
+        } catch (err) { alert('文件格式错误'); }
+      };
+      reader.readAsText(file);
+    });
+
+    function resetTodayDone() {
+      if (!confirm('重置今日所有任务的完成状态？')) return;
+      localStorage.removeItem(DONE_PREFIX + today());
+      alert('已重置');
+    }
+    function clearAllTasks() {
+      if (!confirm('清空所有任务？此操作不可恢复！')) return;
+      if (!confirm('确定要清空吗？')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      Object.keys(localStorage).filter(k => k.startsWith(DONE_PREFIX)).forEach(k => localStorage.removeItem(k));
+      alert('已清空');
+      updateStorageInfo();
+    }
+    function goHome() { window.location.href = 'home.html'; }
+    function goAll() { window.location.href = 'all-tasks.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    updateStorageInfo();
+  </script>
+</body>
+</html>

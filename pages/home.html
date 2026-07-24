@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0F172A">
+  <title>todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; background: linear-gradient(180deg, #F8FAFC 0%, #E8EDF3 100%); color: #0F172A; height: 100vh; overflow: hidden; }
+    /* status bar removed */
+    .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06); }
+    .scroll-area { height: calc(100vh - 80px); overflow-y: auto; padding: 0 20px 20px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .progress-ring { transform: rotate(-90deg); transition: stroke-dashoffset 0.5s ease-out; }
+    .task-row { transition: all 0.2s; }
+    .task-row:active { transform: scale(0.99); }
+    .checkbox { transition: all 0.2s; }
+    .task-done .task-title { text-decoration: line-through; color: #9CA3AF; }
+    .task-done { opacity: 0.55; }
+    @keyframes checkPop { 0% { transform: scale(0.5); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .check-pop { animation: checkPop 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease-out backwards; }
+    .category-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .filter-chip { padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; transition: all 0.2s; cursor: pointer; }
+    .filter-chip.active { background: #0F172A; color: white; }
+    .filter-chip:not(.active) { background: rgba(255,255,255,0.6); color: #4B5563; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#84A98C' } } } }
+  </script>
+</head>
+<body>
+  <div class="scroll-area pt-3 space-y-3.5" id="content">
+    <!-- Header card -->
+    <div class="glass rounded-[28px] p-5 fade-in" id="headerCard">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500 font-medium tracking-wide" id="dateLabel">星期四 · 7月24日</p>
+          <h1 class="text-[26px] font-bold mt-1.5 tracking-tight leading-tight" id="greeting">今日</h1>
+        </div>
+        <div class="relative w-[68px] h-[68px]">
+          <svg class="w-[68px] h-[68px] progress-ring" viewBox="0 0 80 80" id="progressRing">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="#E5E7EB" stroke-width="6"/>
+            <circle cx="40" cy="40" r="32" fill="none" stroke="#84A98C" stroke-width="6" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" id="progressArc"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <p class="text-[15px] font-bold leading-none" id="progressNum">0</p>
+            <p class="text-[9px] text-gray-500 mt-0.5" id="progressTotal">/ 0</p>
+          </div>
+        </div>
+      </div>
+      <p class="text-[12px] text-gray-500 mt-3" id="encourage">添加你想做的事，开始今天</p>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 fade-in" id="filterBar">
+      <button class="filter-chip active" data-filter="all">全部</button>
+      <button class="filter-chip" data-filter="work">工作</button>
+      <button class="filter-chip" data-filter="life">生活</button>
+      <button class="filter-chip" data-filter="health">健康</button>
+      <button class="filter-chip" data-filter="study">学习</button>
+    </div>
+
+    <!-- Task list -->
+    <div id="taskList" class="space-y-2.5"></div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="hidden text-center py-16 fade-in">
+      <div class="w-20 h-20 rounded-3xl mx-auto bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center mb-4">
+        <i class="fas fa-sparkles text-brand text-2xl"></i>
+      </div>
+      <p class="text-[16px] font-semibold">今天想做点什么？</p>
+      <p class="text-[12px] text-gray-500 mt-1.5">点下方 + 按钮添加任务</p>
+    </div>
+  </div>
+
+  <!-- Floating + button -->
+  <div class="absolute bottom-[100px] right-5 z-10">
+    <button onclick="openAdd()" class="w-14 h-14 rounded-full bg-ink text-white shadow-2xl flex items-center justify-center active:scale-95 transition-transform" style="box-shadow: 0 10px 30px rgba(15,23,42,0.4);">
+      <i class="fas fa-plus text-base"></i>
+    </button>
+  </div>
+
+  <!-- Bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full px-3 py-2.5 flex items-center justify-between" style="border-radius: 999px;">
+      <button onclick="goPage('home.html')" class="flex flex-col items-center gap-0.5 text-ink px-2">
+        <i class="fas fa-house text-[15px]"></i>
+        <span class="text-[10px] font-semibold">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-newspaper text-[15px]"></i>
+        <span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button onclick="goPage('all-tasks.html')" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-list text-[15px]"></i>
+        <span class="text-[10px] font-medium">全部</span>
+      </button>
+      <button onclick="goPage('settings.html')" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-gear text-[15px]"></i>
+        <span class="text-[10px] font-medium">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ====== Data layer ======
+    const CATEGORIES = {
+      work:   { label: '工作', color: '#84A98C' },
+      life:   { label: '生活', color: '#D4A574' },
+      health: { label: '健康', color: '#B5C7E8' },
+      study:  { label: '学习', color: '#9D8189' },
+      other:  { label: '其他', color: '#9CA3AF' }
+    };
+    const STORAGE_KEY = 'todo_tasks_v1';
+    const DONE_PREFIX = 'todo_done_';
+    const ORDER_KEY = 'todo_order_v1';
+
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function loadTasks() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    function saveTasks(tasks) { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+    function loadDone() { return new Set(JSON.parse(localStorage.getItem(DONE_PREFIX + today()) || '[]')); }
+    function saveDone(set) { localStorage.setItem(DONE_PREFIX + today(), JSON.stringify([...set])); }
+
+    // ====== State ======
+    let tasks = loadTasks();
+    let doneToday = loadDone();
+    let activeFilter = 'all';
+
+    // ====== Rendering ======
+    function render() {
+      const list = document.getElementById('taskList');
+      const empty = document.getElementById('emptyState');
+
+      // Filter
+      let visible = tasks;
+      if (activeFilter !== 'all') visible = tasks.filter(t => (t.category || 'other') === activeFilter);
+
+      // Sort: incomplete first, then by time, then by createdAt
+      visible.sort((a, b) => {
+        const aDone = doneToday.has(a.id) ? 1 : 0;
+        const bDone = doneToday.has(b.id) ? 1 : 0;
+        if (aDone !== bDone) return aDone - bDone;
+        if (a.time && b.time) return a.time.localeCompare(b.time);
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      });
+
+      if (visible.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+      } else {
+        empty.classList.add('hidden');
+        list.innerHTML = visible.map(t => taskRowHTML(t)).join('');
+        // Attach click handlers
+        list.querySelectorAll('[data-task-id]').forEach(el => {
+          const id = el.dataset.taskId;
+          el.querySelector('.task-check').addEventListener('click', (e) => { e.stopPropagation(); toggleTask(id); });
+          el.querySelector('.task-row-main').addEventListener('click', () => toggleTask(id));
+          el.querySelector('.task-delete').addEventListener('click', (e) => { e.stopPropagation(); deleteTask(id); });
+        });
+      }
+
+      // Progress
+      const total = tasks.length;
+      const done = tasks.filter(t => doneToday.has(t.id)).length;
+      const ratio = total === 0 ? 0 : done / total;
+      const circumference = 201;
+      document.getElementById('progressArc').setAttribute('stroke-dashoffset', circumference * (1 - ratio));
+      document.getElementById('progressNum').textContent = done;
+      document.getElementById('progressTotal').textContent = `/ ${total}`;
+
+      // Encourage
+      const enc = document.getElementById('encourage');
+      if (total === 0) enc.textContent = '添加你想做的事，开始今天';
+      else if (done === total) enc.textContent = '今天全部搞定，享受这份轻松 ☕';
+      else if (ratio >= 0.7) enc.textContent = '就差一点点了，再加把劲 ✨';
+      else if (ratio >= 0.3) enc.textContent = '稳步推进中';
+      else enc.textContent = '一点点开始就好';
+    }
+
+    function taskRowHTML(t) {
+      const cat = CATEGORIES[t.category] || CATEGORIES.other;
+      const isDone = doneToday.has(t.id);
+      const time = t.time ? `<span class="text-[11px] text-gray-500 font-medium tabular-nums">${t.time}</span>` : '';
+      return `
+        <div class="glass rounded-[20px] p-4 flex items-center gap-3 task-row fade-in ${isDone ? 'task-done' : ''}" data-task-id="${t.id}">
+          <div class="task-check w-6 h-6 rounded-full ${isDone ? 'bg-ink' : 'border-[1.5px] border-gray-300'} flex items-center justify-center cursor-pointer shrink-0 ${isDone ? 'check-pop' : ''}">
+            ${isDone ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}
+          </div>
+          <div class="task-row-main flex-1 cursor-pointer">
+            <div class="flex items-center gap-2">
+              ${time}
+              <span class="task-title text-[14px] font-semibold">${escapeHTML(t.title)}</span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-1">
+              <span class="category-dot" style="background: ${cat.color}"></span>
+              <span class="text-[10px] text-gray-500">${cat.label}</span>
+            </div>
+          </div>
+          <button class="task-delete w-7 h-7 rounded-full text-gray-300 hover:text-red-400 flex items-center justify-center shrink-0" onclick="event.stopPropagation()">
+            <i class="fas fa-xmark text-[12px]"></i>
+          </button>
+        </div>
+      `;
+    }
+
+    function escapeHTML(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // ====== Actions ======
+    function toggleTask(id) {
+      if (doneToday.has(id)) doneToday.delete(id); else doneToday.add(id);
+      saveDone(doneToday);
+      render();
+    }
+    function deleteTask(id) {
+      if (!confirm('确定删除这个任务吗？')) return;
+      tasks = tasks.filter(t => t.id !== id);
+      doneToday.delete(id);
+      saveTasks(tasks);
+      saveDone(doneToday);
+      render();
+    }
+    function addTask(data) {
+      const task = {
+        id: 't-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        title: data.title,
+        time: data.time || null,
+        category: data.category || 'other',
+        createdAt: Date.now()
+      };
+      tasks.push(task);
+      saveTasks(tasks);
+      render();
+    }
+
+    // ====== Navigation ======
+    function openAdd() { window.location.href = 'add-task.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    // ====== Init ======
+    function init() {
+      // Clock
+      const updateClock = () => {
+        const d = new Date();
+        const c = document.getElementById('clockTime');
+        if (c) c.textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+      };
+      updateClock();
+      setInterval(updateClock, 30000);
+
+      // Date label
+      const d = new Date();
+      const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+      document.getElementById('dateLabel').textContent = `${weekdays[d.getDay()]} · ${d.getMonth()+1}月${d.getDate()}日`;
+
+      // Greeting
+      const h = d.getHours();
+      let g = '今日';
+      if (h < 6) g = '深夜了';
+      else if (h < 11) g = '早安';
+      else if (h < 13) g = '中午好';
+      else if (h < 18) g = '下午好';
+      else g = '晚上好';
+      document.getElementById('greeting').textContent = g;
+
+      // Filter chips
+      document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activeFilter = chip.dataset.filter;
+          render();
+        });
+      });
+
+      render();
+    }
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="todo">
+  <meta name="theme-color" content="#0F172A">
+  <meta name="description" content="todo · 让今天有迹可循。一个简单的每日任务清单。">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", sans-serif;
+      background: radial-gradient(ellipse at top, #1E293B 0%, #0F172A 60%, #020617 100%);
+      min-height: 100vh;
+      color: #fff;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .phone-frame {
+      width: 410px;
+      height: 870px;
+      background: linear-gradient(145deg, #1f1f1f, #0a0a0a);
+      border-radius: 55px;
+      padding: 12px;
+      box-shadow: 0 0 0 2px #2a2a2a, 0 50px 100px -20px rgba(0,0,0,0.7), 0 30px 60px -30px rgba(132, 169, 140, 0.15);
+      position: relative;
+    }
+    .phone-frame::before {
+      content: '';
+      position: absolute;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 32px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 20;
+    }
+    .phone-screen { width: 100%; height: 100%; border-radius: 45px; overflow: hidden; background: #F8FAFC; position: relative; }
+    .phone-screen iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .nav-item { transition: all 0.2s; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); transform: translateX(2px); }
+    .nav-item.active { background: rgba(132, 169, 140, 0.15); color: #84A98C; }
+    .nav-item.active .nav-icon { background: rgba(132, 169, 140, 0.2); }
+
+    .mobile-shell { background: #F8FAFC; position: fixed; inset: 0; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+    .mobile-frame { width: 100%; height: 100%; border: 0; display: block; background: #F8FAFC; }
+    .mobile-menu-btn {
+      position: fixed;
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      right: 16px;
+      z-index: 50;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      cursor: grab;
+      transition: transform 0.2s, box-shadow 0.2s;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    .mobile-menu-btn:active { cursor: grabbing; transform: scale(1.08); }
+    .mobile-menu-btn.dragging { box-shadow: 0 12px 32px rgba(0,0,0,0.45); transition: none; }
+    .drag-hint {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(132, 169, 140, 0.7);
+      box-shadow: -8px 0 0 rgba(132, 169, 140, 0.7);
+    }
+    .mobile-menu { position: fixed; inset: 0; z-index: 60; display: none; }
+    .mobile-menu.show { display: block; }
+    .mobile-menu-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .mobile-menu-sheet {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      border-radius: 28px 28px 0 0;
+      padding: 12px 20px calc(24px + env(safe-area-inset-bottom));
+    }
+    .page-grid-btn {
+      aspect-ratio: 1;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0,0,0,0.05);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      font-size: 12px; font-weight: 500; color: #0F172A;
+      transition: all 0.2s;
+    }
+    .page-grid-btn:active { transform: scale(0.95); background: rgba(132, 169, 140, 0.15); }
+    .page-grid-btn i { font-size: 18px; color: #84A98C; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#84A98C' } } } }
+  </script>
+</head>
+<body class="overflow-x-hidden">
+
+  <!-- ===== MOBILE VIEW ===== -->
+  <div class="md:hidden mobile-shell">
+    <iframe id="mobileFrame" class="mobile-frame" src="pages/home.html"></iframe>
+
+    <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="if(!this.dataset.dragged){toggleMenu()}" aria-label="切换页面（可拖动）">
+      <i class="fas fa-layer-group text-sm"></i>
+      <span class="drag-hint"></span>
+    </button>
+
+    <div id="menu" class="mobile-menu" onclick="if(event.target===this) closeMenu()">
+      <div class="mobile-menu-backdrop" onclick="closeMenu()"></div>
+      <div class="mobile-menu-sheet">
+        <div class="w-10 h-1 rounded-full bg-gray-300 mx-auto mb-3"></div>
+        <p class="text-[11px] text-gray-500 uppercase tracking-widest font-semibold mb-3">页面预览</p>
+        <div class="grid grid-cols-4 gap-2.5">
+          <button class="page-grid-btn" onclick="go('pages/home.html')"><i class="fas fa-house"></i>今日</button>
+          <button class="page-grid-btn" onclick="go('pages/brief.html')"><i class="fas fa-newspaper"></i>日报</button>
+          <button class="page-grid-btn" onclick="go('pages/all-tasks.html')"><i class="fas fa-list"></i>全部</button>
+          <button class="page-grid-btn" onclick="go('pages/settings.html')"><i class="fas fa-gear"></i>设置</button>
+          <button class="page-grid-btn" onclick="installPWA()"><i class="fas fa-download"></i>安装</button>
+          <button class="page-grid-btn" onclick="go('pages/home.html')"><i class="fas fa-arrow-rotate-right"></i>刷新</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DESKTOP VIEW ===== -->
+  <div class="hidden md:block">
+    <header class="px-10 pt-10 pb-6">
+      <div class="flex items-center justify-between max-w-7xl mx-auto">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-ink flex items-center justify-center text-white text-sm font-bold lowercase">todo</div>
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight">todo</h1>
+            <p class="text-xs text-gray-400 mt-0.5">让今天有迹可循 · 原型预览 v1.0</p>
+          </div>
+        </div>
+        <div class="text-xs text-gray-500 flex items-center gap-2">
+          <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10">PWA Ready</span>
+          <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10">本地存储</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex gap-8 px-10 pb-12 max-w-7xl mx-auto">
+      <aside class="w-64 shrink-0">
+        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3 px-3">页面</p>
+        <nav class="space-y-1" id="pageNav">
+          <button data-page="pages/home.html" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
+            <span class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center text-xs">01</span>
+            <span class="text-sm">今日</span>
+          </button>
+          <button data-page="pages/brief.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">02</span>
+            <span class="text-sm">每日日报</span>
+          </button>
+          <button data-page="pages/add-task.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">03</span>
+            <span class="text-sm">添加任务</span>
+          </button>
+          <button data-page="pages/all-tasks.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">04</span>
+            <span class="text-sm">全部任务</span>
+          </button>
+          <button data-page="pages/settings.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">05</span>
+            <span class="text-sm">设置</span>
+          </button>
+        </nav>
+
+        <div class="mt-8 p-4 rounded-2xl bg-gradient-to-br from-brand/20 to-sky-500/10 border border-white/5">
+          <p class="text-xs text-gray-400 leading-relaxed">
+            <i class="fas fa-mobile-screen text-brand mr-1"></i>
+            手机访问自动进入 App 模式<br>
+            <i class="fas fa-circle-info text-brand mr-1"></i>
+            底部 4 个 Tab · 支持日导入最新日报
+          </p>
+        </div>
+      </aside>
+
+      <div class="flex-1 flex items-start justify-center pt-2">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <iframe id="phoneFrame" src="pages/home.html"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <aside class="w-56 shrink-0 pt-4">
+        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-3">功能</p>
+        <div class="space-y-2">
+          <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest">数据</p>
+            <p class="text-[13px] font-semibold mt-1.5">本地存储</p>
+            <p class="text-[10px] text-gray-500 mt-0.5">localStorage 离线可用</p>
+          </div>
+          <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest">每日</p>
+            <p class="text-[13px] font-semibold mt-1.5">自动重置</p>
+            <p class="text-[10px] text-gray-500 mt-0.5">新一天从零开始</p>
+          </div>
+          <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest">分类</p>
+            <div class="flex gap-1.5 mt-2">
+              <div class="w-6 h-6 rounded-full" style="background: #84A98C"></div>
+              <div class="w-6 h-6 rounded-full" style="background: #D4A574"></div>
+              <div class="w-6 h-6 rounded-full" style="background: #B5C7E8"></div>
+              <div class="w-6 h-6 rounded-full" style="background: #9D8189"></div>
+              <div class="w-6 h-6 rounded-full" style="background: #9CA3AF"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 p-4 rounded-2xl bg-white/5 border border-white/10">
+          <p class="text-xs font-semibold mb-2">使用提示</p>
+          <p class="text-[11px] text-gray-400 leading-relaxed">
+            所有数据保存在你手机的浏览器里，<br>
+            卸载浏览器会丢失数据。<br>
+            设置里可以导出 JSON 备份。
+          </p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const navItems = document.querySelectorAll('.nav-item');
+    const frame = document.getElementById('phoneFrame');
+    if (navItems.length && frame) {
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          navItems.forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+          frame.src = item.dataset.page;
+        });
+      });
+    }
+
+    function toggleMenu() { document.getElementById('menu').classList.toggle('show'); }
+    function closeMenu() { document.getElementById('menu').classList.remove('show'); }
+    function go(path) { document.getElementById('mobileFrame').src = path; closeMenu(); }
+
+    // Draggable FAB
+    (function() {
+      const fab = document.getElementById('mobileMenuBtn');
+      if (!fab) return;
+      let isDragging = false, didMove = false, startX, startY, initLeft, initTop;
+      const THRESHOLD = 6;
+
+      function start(x, y) {
+        isDragging = true; didMove = false;
+        startX = x; startY = y;
+        const r = fab.getBoundingClientRect();
+        initLeft = r.left; initTop = r.top;
+        fab.style.transition = 'none';
+      }
+      function move(x, y) {
+        if (!isDragging) return;
+        const dx = x - startX, dy = y - startY;
+        if (Math.abs(dx) > THRESHOLD || Math.abs(dy) > THRESHOLD) {
+          didMove = true; fab.classList.add('dragging');
+          const newLeft = Math.max(8, Math.min(window.innerWidth - fab.offsetWidth - 8, initLeft + dx));
+          const newTop = Math.max(60, Math.min(window.innerHeight - fab.offsetHeight - 8, initTop + dy));
+          fab.style.left = newLeft + 'px';
+          fab.style.top = newTop + 'px';
+          fab.style.right = 'auto'; fab.style.bottom = 'auto';
+        }
+      }
+      function end() {
+        if (!isDragging) return;
+        fab.classList.remove('dragging');
+        if (didMove) {
+          fab.dataset.dragged = '1';
+          const r = fab.getBoundingClientRect();
+          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          fab.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+          // snap horizontal
+          if (cx < window.innerWidth / 2) { fab.style.left = '12px'; fab.style.right = 'auto'; }
+          else { fab.style.left = 'auto'; fab.style.right = '12px'; }
+          // snap vertical (avoid very top with status area, very bottom with tab bar)
+          if (cy < window.innerHeight * 0.35) { fab.style.top = '80px'; fab.style.bottom = 'auto'; }
+          else if (cy > window.innerHeight * 0.7) { fab.style.top = 'auto'; fab.style.bottom = '20px'; }
+        } else {
+          delete fab.dataset.dragged;
+        }
+        isDragging = false;
+      }
+      // Touch
+      fab.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); }, { passive: true });
+      fab.addEventListener('touchmove', e => { if (isDragging && didMove) e.preventDefault(); const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: false });
+      fab.addEventListener('touchend', end);
+      // Mouse
+      fab.addEventListener('mousedown', e => { e.preventDefault(); start(e.clientX, e.clientY); });
+      document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+      document.addEventListener('mouseup', end);
+      // Reset drag flag on real click only
+      fab.addEventListener('click', e => {
+        if (fab.dataset.dragged) { e.stopPropagation(); delete fab.dataset.dragged; }
+      }, true);
+    })();
+    function installPWA() {
+      closeMenu();
+      const prompt = window.deferredPrompt;
+      if (prompt) {
+        prompt.prompt();
+        prompt.userChoice.then(() => { window.deferredPrompt = null; });
+      } else {
+        alert('提示：在 Safari/Chrome 中，点击「分享」或「菜单」按钮，选择「添加到主屏幕」即可安装。');
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>全部任务 · todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", sans-serif; background: linear-gradient(180deg, #F8FAFC 0%, #E8EDF3 100%); color: #0F172A; height: 100vh; overflow: hidden; }
+    /* status bar removed */
+    .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06); }
+    .scroll-area { height: calc(100vh - 80px); overflow-y: auto; padding: 0 20px 20px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .category-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .task-row { transition: all 0.2s; }
+    .task-row:active { transform: scale(0.99); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease-out backwards; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#84A98C' } } } }
+  </script>
+</head>
+<body>
+  <div class="px-5 pt-3 pb-3">
+    <div class="flex items-center justify-between mb-1">
+      <h1 class="text-[24px] font-bold tracking-tight">全部任务</h1>
+      <button onclick="clearDone()" class="text-[12px] text-gray-500 font-medium">清除已完成</button>
+    </div>
+    <p class="text-[12px] text-gray-500 mt-1" id="summary">共 0 个任务</p>
+  </div>
+
+  <div class="scroll-area space-y-2.5" id="taskList"></div>
+
+  <div id="emptyState" class="hidden absolute top-1/2 left-0 right-0 -translate-y-1/2 text-center px-10">
+    <div class="w-20 h-20 rounded-3xl mx-auto bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center mb-4">
+      <i class="fas fa-clipboard-list text-brand text-2xl"></i>
+    </div>
+    <p class="text-[16px] font-semibold">还没有任务</p>
+    <p class="text-[12px] text-gray-500 mt-1.5">回到「今日」点 + 添加</p>
+    <button onclick="goHome()" class="mt-5 px-5 py-2.5 rounded-full bg-ink text-white text-[13px] font-medium">回到今日</button>
+  </div>
+
+  <!-- Bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full px-3 py-2.5 flex items-center justify-between" style="border-radius: 999px;">
+      <button onclick="goHome()" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-house text-[15px]"></i>
+        <span class="text-[10px] font-medium">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-newspaper text-[15px]"></i>
+        <span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button class="flex flex-col items-center gap-0.5 text-ink px-2">
+        <i class="fas fa-list text-[15px]"></i>
+        <span class="text-[10px] font-semibold">全部</span>
+      </button>
+      <button onclick="goPage('settings.html')" class="flex flex-col items-center gap-0.5 text-gray-400 px-2">
+        <i class="fas fa-gear text-[15px]"></i>
+        <span class="text-[10px] font-medium">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const CATEGORIES = {
+      work:   { label: '工作', color: '#84A98C' },
+      life:   { label: '生活', color: '#D4A574' },
+      health: { label: '健康', color: '#B5C7E8' },
+      study:  { label: '学习', color: '#9D8189' },
+      other:  { label: '其他', color: '#9CA3AF' }
+    };
+    const STORAGE_KEY = 'todo_tasks_v1';
+    const DONE_PREFIX = 'todo_done_';
+    function today() { return new Date().toISOString().slice(0, 10); }
+    function loadTasks() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    function saveTasks(t) { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)); }
+    function loadDone() { return new Set(JSON.parse(localStorage.getItem(DONE_PREFIX + today()) || '[]')); }
+    function saveDone(s) { localStorage.setItem(DONE_PREFIX + today(), JSON.stringify([...s])); }
+
+    let tasks = loadTasks();
+    let doneToday = loadDone();
+
+    function render() {
+      const list = document.getElementById('taskList');
+      const empty = document.getElementById('emptyState');
+      const summary = document.getElementById('summary');
+      const doneCount = tasks.filter(t => doneToday.has(t.id)).length;
+
+      summary.textContent = `共 ${tasks.length} 个任务 · 今日完成 ${doneCount}`;
+
+      if (tasks.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      // Group by category
+      const groups = {};
+      tasks.forEach(t => {
+        const c = t.category || 'other';
+        if (!groups[c]) groups[c] = [];
+        groups[c].push(t);
+      });
+
+      const order = ['work', 'life', 'health', 'study', 'other'];
+      let html = '';
+      order.forEach(cat => {
+        if (!groups[cat] || groups[cat].length === 0) return;
+        const c = CATEGORIES[cat];
+        html += `<div class="fade-in"><p class="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-2 mt-1 px-1 flex items-center gap-1.5"><span class="category-dot" style="background:${c.color}"></span>${c.label} · ${groups[cat].length}</p>`;
+        html += '<div class="space-y-2 mb-3">';
+        groups[cat].forEach(t => {
+          const isDone = doneToday.has(t.id);
+          const time = t.time ? `<span class="text-[11px] text-gray-500 font-medium tabular-nums">${t.time}</span>` : '';
+          html += `
+            <div class="glass rounded-[20px] p-4 flex items-center gap-3 task-row fade-in" data-id="${t.id}">
+              <div class="w-6 h-6 rounded-full ${isDone ? 'bg-ink' : 'border-[1.5px] border-gray-300'} flex items-center justify-center shrink-0">
+                ${isDone ? '<i class="fas fa-check text-white text-[10px]"></i>' : ''}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  ${time}
+                  <span class="text-[14px] font-semibold truncate ${isDone ? 'line-through text-gray-400' : ''}">${escapeHTML(t.title)}</span>
+                </div>
+              </div>
+              <button class="del-btn w-7 h-7 rounded-full text-gray-300 hover:text-red-400 flex items-center justify-center shrink-0">
+                <i class="fas fa-trash text-[11px]"></i>
+              </button>
+            </div>
+          `;
+        });
+        html += '</div></div>';
+      });
+      list.innerHTML = html;
+
+      list.querySelectorAll('[data-id]').forEach(row => {
+        const id = row.dataset.id;
+        row.querySelector('.del-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteTask(id); });
+        row.addEventListener('click', () => toggleTask(id));
+      });
+    }
+
+    function escapeHTML(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function toggleTask(id) {
+      if (doneToday.has(id)) doneToday.delete(id); else doneToday.add(id);
+      saveDone(doneToday);
+      render();
+    }
+    function deleteTask(id) {
+      if (!confirm('删除这个任务？')) return;
+      tasks = tasks.filter(t => t.id !== id);
+      doneToday.delete(id);
+      saveTasks(tasks);
+      saveDone(doneToday);
+      render();
+    }
+    function clearDone() {
+      const completed = tasks.filter(t => doneToday.has(t.id));
+      if (completed.length === 0) { alert('没有已完成的任务'); return; }
+      if (!confirm(`清除 ${completed.length} 个已完成的任务？`)) return;
+      tasks = tasks.filter(t => !doneToday.has(t.id));
+      completed.forEach(t => doneToday.delete(t.id));
+      saveTasks(tasks);
+      saveDone(doneToday);
+      render();
+    }
+    function goHome() { window.location.href = 'home.html'; }
+    function goSettings() { window.location.href = 'settings.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    function init() {
+      const d = new Date();
+      const c = document.getElementById('clockTime');
+      if (c) c.textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+      render();
+    }
+    init();
+  </script>
+</body>
+</html>
