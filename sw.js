@@ -1,17 +1,17 @@
 // todo · Service Worker
 const CACHE_NAME = 'todo-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
-  '/pages/home.html',
-  '/pages/brief.html',
-  '/pages/add-task.html',
-  '/pages/all-tasks.html',
-  '/pages/settings.html',
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icon-192.png',
+  './icon-512.png',
+  './apple-touch-icon.png',
+  './pages/home.html',
+  './pages/brief.html',
+  './pages/add-task.html',
+  './pages/all-tasks.html',
+  './pages/settings.html',
 ];
 
 self.addEventListener('install', (event) => {
