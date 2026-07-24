@@ -49,10 +49,7 @@
     .md-content > p:first-child { display: none; }
     .md-content > h1:first-child { display: none; }
     .md-content > hr:first-of-type { display: none; }
-    .sheet-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 50; display: none; }
-    .sheet-overlay.show { display: block; }
-    .sheet { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.97); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-radius: 28px 28px 0 0; padding: 16px 20px calc(24px + env(safe-area-inset-bottom)); z-index: 51; max-height: 80vh; overflow-y: auto; display: none; }
-    .sheet.show { display: block; }
+    /* import sheet removed - auto-update via cron + SSH */
     textarea { width: 100%; min-height: 180px; max-height: 50vh; background: rgba(255,255,255,0.8); border: 1px solid rgba(15,23,42,0.1); border-radius: 12px; padding: 10px; font-family: -apple-system, monospace; font-size: 11px; resize: none; outline: none; }
     .loading { display: flex; align-items: center; justify-content: center; min-height: 200px; flex-direction: column; gap: 12px; color: #94A3B8; }
     .pulse-dot { width: 8px; height: 8px; background: #84A98C; border-radius: 50%; animation: pulse 2s infinite; }
@@ -73,9 +70,7 @@
         <span class="pulse-dot"></span>
         每日行业雷达
       </h2>
-      <button onclick="openSheet()" class="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center" title="导入最新日报">
-        <i class="fas fa-cloud-arrow-down text-sm"></i>
-      </button>
+      <div class="w-9 h-9"></div>
     </div>
     <p class="text-[11px] text-gray-500 text-center mt-1" id="briefDate">每日行业雷达 · 2026-07-24 · 编制 Mavis</p>
   </div>
@@ -112,26 +107,9 @@
     </div>
   </div>
 
-  <!-- Import sheet -->
-  <div class="sheet-overlay" id="sheet" onclick="if(event.target===this) closeSheet()">
-    <div class="sheet">
-      <div class="w-10 h-1 rounded-full bg-gray-300 mx-auto mb-4"></div>
-      <h3 class="text-[17px] font-semibold mb-1 flex items-center gap-2">
-        <i class="fas fa-cloud-arrow-down text-ink"></i>
-        导入最新日报
-      </h3>
-      <p class="text-[12px] text-gray-500 mb-3 leading-relaxed">每天 8 点 Mavis 会推送新版日报到你的会话。点「复制」复制全文，然后打开 app，点头部这个云朵图标，把内容粘贴进下面框，点击「导入」即可。已自定义的内容会清空。</p>
-      <textarea id="briefInput" placeholder="复制 Mavis 推给你的日报 Markdown → 粘贴到这里"></textarea>
-      <div class="flex gap-2 mt-3">
-        <button onclick="closeSheet()" class="flex-1 py-3 rounded-2xl bg-gray-100 text-[14px] font-medium text-gray-700">取消</button>
-        <button onclick="resetBrief()" class="px-4 py-3 rounded-2xl bg-amber-50 text-amber-700 text-[13px] font-medium">恢复默认</button>
-        <button onclick="loadBriefFromInput()" class="flex-1 py-3 rounded-2xl bg-ink text-white text-[14px] font-semibold">导入</button>
-      </div>
-    </div>
-  </div>
+  <!-- (导入按钮已移除，日报通过每天 8:00 cron 自动推送) -->
 
   <script>
-    const STORAGE_KEY = 'todo_brief_v1';
     const DEFAULT_BRIEF = `# 每日行业雷达 · 2026-07-24
 
 > 报告期：2026-07-23 ~ 2026-07-24
@@ -809,10 +787,10 @@
 
     // Init
     function init() {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      const content = stored || DEFAULT_BRIEF;
-      renderBrief(content);
-      updateDate(stored);
+      renderBrief(DEFAULT_BRIEF);
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      document.getElementById('briefDate').textContent = `${dateStr} · 编制 Mavis`;
     }
 
     function renderBrief(md) {
@@ -822,37 +800,6 @@
       } catch (e) {
         document.getElementById('briefContent').innerHTML = '<div class="p-4 text-red-500 text-[13px]">解析失败：' + e.message + '</div>';
       }
-    }
-
-    function updateDate(isCustom) {
-      const now = new Date();
-      const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
-      const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-      const label = isCustom ? `${dateStr} · 今日已自定义` : `${dateStr} · 编制 Mavis`;
-      document.getElementById('briefDate').textContent = label;
-    }
-
-    function openSheet() {
-      document.getElementById('briefInput').value = '';
-      document.getElementById('sheet').classList.add('show');
-    }
-    function closeSheet() {
-      document.getElementById('sheet').classList.remove('show');
-    }
-    function loadBriefFromInput() {
-      const v = document.getElementById('briefInput').value.trim();
-      if (!v) { alert('内容不能为空'); return; }
-      localStorage.setItem(STORAGE_KEY, v);
-      renderBrief(v);
-      updateDate(true);
-      closeSheet();
-    }
-    function resetBrief() {
-      if (!confirm('恢复默认嵌入的 2026-07-24 日报？已自定义的内容会清空。')) return;
-      localStorage.removeItem(STORAGE_KEY);
-      renderBrief(DEFAULT_BRIEF);
-      updateDate(false);
-      closeSheet();
     }
 
     function goHome() { window.location.href = 'home.html'; }

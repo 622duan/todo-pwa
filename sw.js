@@ -1,5 +1,5 @@
 // todo · Service Worker
-const CACHE_NAME = 'todo-v3';
+const CACHE_NAME = 'todo-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -9,6 +9,9 @@ const ASSETS = [
   './apple-touch-icon.png',
   './pages/home.html',
   './pages/brief.html',
+  './pages/jp.html',
+  './pages/en.html',
+  './pages/cartoon.html',
   './pages/add-task.html',
   './pages/all-tasks.html',
   './pages/settings.html',
@@ -31,18 +34,38 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  if (url.origin === location.origin) {
+  if (url.origin !== location.origin) return;
+
+  const isHTML = event.request.mode === 'navigate' || event.request.destination === 'document';
+
+  if (isHTML) {
+    // Network-first for HTML so cron updates show up; fall back to cache when offline
     event.respondWith(
-      caches.match(event.request).then(
-        (cached) =>
-          cached ||
-          fetch(event.request).then((response) => {
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-            return response;
-          })
-      )
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache-first for static assets (icons, images)
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        }).catch(() => cached);
+      })
     );
   }
 });

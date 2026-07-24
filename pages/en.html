@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>每日英语 · todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: linear-gradient(180deg, #F0F4F8 0%, #E2E8F0 100%); min-height: 100vh; -webkit-font-smoothing: antialiased; color: #0F172A; overflow-x: hidden; }
+    .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255,255,255,0.7); }
+    .ink { color: #0F172A; }
+    .bg-ink { background: #0F172A; }
+    .brand { color: #4A6FA5; }
+    .bg-brand { background: #4A6FA5; }
+    .accent { color: #E07A5F; }
+    .bg-accent { background: #E07A5F; }
+    .scroll-area { height: calc(100vh - 80px); overflow-y: auto; padding: 0 20px 20px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #E07A5F; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    .tab-btn.active { color: #0F172A; }
+    .tab-btn.active i { transform: scale(1.1); }
+    .tab-btn i { transition: transform 0.2s; }
+    .tab-btn { color: #94a3b8; transition: color 0.2s; }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .divider-line { background: linear-gradient(90deg, transparent, rgba(15,23,42,0.15), transparent); height: 1px; }
+    .ipa { font-family: 'Charis SIL', 'Doulos SIL', serif; font-style: normal; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#4A6FA5', accent: '#E07A5F' } } } }
+  </script>
+</head>
+<body>
+  <!-- Header -->
+  <div class="px-5 pt-3 pb-3">
+    <div class="flex items-center justify-between mb-1">
+      <button onclick="goHome()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center">
+        <i class="fas fa-chevron-left text-sm"></i>
+      </button>
+      <h2 class="text-[15px] font-semibold flex items-center gap-1.5">
+        <span class="pulse-dot"></span>
+        每日英语
+      </h2>
+      <div class="w-9 h-9"></div>
+    </div>
+    <p class="text-[11px] text-gray-500 text-center mt-1" id="dateLabel">CET-4/6 · 每天一词</p>
+  </div>
+
+  <!-- Content -->
+  <div class="scroll-area">
+    <div id="wordCard" class="fade-in">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Tip card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <p class="text-[12px] text-gray-600 leading-relaxed">
+        <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i>
+        <strong>小贴士</strong>：50 天一轮回，覆盖日常生活/职场/旅行高频词。每天 1 个，一个月后能看懂英文邮件、点菜、订酒店。
+      </p>
+    </div>
+
+    <!-- Streak card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500">今日进度</p>
+          <p class="text-[15px] font-semibold mt-0.5" id="progressText">第 1 / 50 词</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[11px] text-gray-500">明日</p>
+          <p class="text-[13px] font-medium mt-0.5" id="nextWord">—</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full flex items-center justify-around py-2.5 px-2 shadow-lg" style="border-radius: 999px;">
+      <button onclick="goPage('home.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-house text-[15px]"></i><span class="text-[10px] font-medium">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-newspaper text-[15px]"></i><span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button onclick="goPage('all-tasks.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-list text-[15px]"></i><span class="text-[10px] font-medium">全部</span>
+      </button>
+      <button onclick="goPage('settings.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-gear text-[15px]"></i><span class="text-[10px] font-medium">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const WORDS = [
+      { w: "abandon", ipa: "/əˈbændən/", pos: "v.", m: "放弃；抛弃", e: "He abandoned his car in the snow.", e_z: "他把车丢在雪地里了。", t: "电影《碟中谍》经典开头" },
+      { w: "ability", ipa: "/əˈbɪləti/", pos: "n.", m: "能力；才能", e: "She has the ability to solve problems.", e_z: "她有解决问题的能力。", t: "常见词根 -ability" },
+      { w: "absolute", ipa: "/ˈæbsəluːt/", pos: "adj.", m: "绝对的；完全的", e: "That's absolute nonsense.", e_z: "那完全是胡说八道。", t: "和「相对」相对" },
+      { w: "academic", ipa: "/ˌækəˈdemɪk/", pos: "adj.", m: "学术的；理论的", e: "He had an outstanding academic record.", e_z: "他学业成绩很优秀。", t: "也可指学究" },
+      { w: "accommodate", ipa: "/əˈkɒmədeɪt/", pos: "v.", m: "容纳；适应；迁就", e: "The hotel can accommodate 200 guests.", e_z: "酒店可容纳 200 位客人。", t: "长单词，注意重音" },
+      { w: "accompany", ipa: "/əˈkʌmpəni/", pos: "v.", m: "陪伴；伴随", e: "Children must be accompanied by adults.", e_z: "儿童须有成人陪同。", t: "音乐术语：伴奏" },
+      { w: "accomplish", ipa: "/əˈkʌmplɪʃ/", pos: "v.", m: "完成；实现", e: "We accomplished our goal.", e_z: "我们达成了目标。", t: "和 achieve 类似" },
+      { w: "accurate", ipa: "/ˈækjərət/", pos: "adj.", m: "准确的；精确的", e: "Her report is highly accurate.", e_z: "她的报告非常准确。", t: "反义词 inaccurate" },
+      { w: "acknowledge", ipa: "/əkˈnɒlɪdʒ/", pos: "v.", m: "承认；致谢", e: "He acknowledged his mistake.", e_z: "他承认了错误。", t: "邮件里常用 Ack." },
+      { w: "acquire", ipa: "/əˈkwaɪər/", pos: "v.", m: "获得；习得", e: "She acquired fluent English.", e_z: "她学会了流利的英语。", t: "考试高频词" },
+      { w: "adapt", ipa: "/əˈdæpt/", pos: "v.", m: "适应；改编", e: "We must adapt to changes.", e_z: "我们必须适应变化。", t: "和 adopt（采用）区分" },
+      { w: "adequate", ipa: "/ˈædɪkwət/", pos: "adj.", m: "足够的；适当的", e: "The salary is adequate for living.", e_z: "这份薪水足够生活。", t: "比 enough 正式" },
+      { w: "adjust", ipa: "/əˈdʒʌst/", pos: "v.", m: "调整；适应", e: "Adjust the seat to your height.", e_z: "把座椅调到适合你身高。", t: "「调整」最常用词" },
+      { w: "advocate", ipa: "/ˈædvəkeɪt/", pos: "v./n.", m: "提倡；拥护者", e: "She advocates for equal rights.", e_z: "她提倡平等权利。", t: "名词/动词重音不同" },
+      { w: "affect", ipa: "/əˈfekt/", pos: "v.", m: "影响", e: "The weather affects my mood.", e_z: "天气影响我的心情。", t: "和 effect（效果）区分" },
+      { w: "aggregate", ipa: "/ˈæɡrɪɡət/", pos: "n./adj.", m: "总计；合计的", e: "The aggregate cost was high.", e_z: "总成本很高。", t: "经济学常用" },
+      { w: "allocate", ipa: "/ˈæləkeɪt/", pos: "v.", m: "分配；拨给", e: "Funds were allocated to education.", e_z: "资金被分配到教育上。", t: "和 locate（定位）区分" },
+      { w: "ambiguous", ipa: "/æmˈbɪɡjuəs/", pos: "adj.", m: "模糊的；含糊的", e: "His answer was ambiguous.", e_z: "他的回答模棱两可。", t: "和「明确」相反" },
+      { w: "analyze", ipa: "/ˈænəlaɪz/", pos: "v.", m: "分析；解析", e: "Let's analyze the data.", e_z: "我们分析下数据。", t: "CET 6 必考" },
+      { w: "anticipate", ipa: "/ænˈtɪsɪpeɪt/", pos: "v.", m: "预期；预料", e: "I anticipate good results.", e_z: "我预期会有好结果。", t: "比 expect 更正式" },
+      { w: "apparent", ipa: "/əˈpærənt/", pos: "adj.", m: "明显的；表面上的", e: "It was apparent that he was tired.", e_z: "显然他累了。", t: "和「透明 transparent」同根" },
+      { w: "appreciate", ipa: "/əˈpriːʃieɪt/", pos: "v.", m: "感激；欣赏", e: "I appreciate your help.", e_z: "我感谢你的帮助。", t: "邮件结尾常用" },
+      { w: "approach", ipa: "/əˈprəʊtʃ/", pos: "v./n.", m: "接近；方法", e: "We need a new approach.", e_z: "我们需要新方法。", t: "名动同形" },
+      { w: "appropriate", ipa: "/əˈprəʊpriət/", pos: "adj.", m: "合适的；恰当的", e: "Wear appropriate clothes.", e_z: "穿合适的衣服。", t: "和「不恰当」区分" },
+      { w: "approximate", ipa: "/əˈprɒksɪmət/", pos: "adj.", m: "大约的；近似的", e: "The cost is approximately $100.", e_z: "费用大约 100 美元。", t: "简写 approx." },
+      { w: "arbitrary", ipa: "/ˈɑːbɪtrəri/", pos: "adj.", m: "任意的；武断的", e: "An arbitrary decision.", e_z: "武断的决定。", t: "贬义偏多" },
+      { w: "assess", ipa: "/əˈses/", pos: "v.", m: "评估；估价", e: "Assess the situation first.", e_z: "先评估情况。", t: "和 access（访问）拼写区分" },
+      { w: "assume", ipa: "/əˈsjuːm/", pos: "v.", m: "假设；承担", e: "Don't assume the worst.", e_z: "别往最坏处想。", t: "和「假装 pretend」区分" },
+      { w: "attribute", ipa: "/əˈtrɪbjuːt/", pos: "v./n.", m: "归因于；属性", e: "Attribute success to hard work.", e_z: "把成功归于努力。", t: "名动重音不同" },
+      { w: "boost", ipa: "/buːst/", pos: "v./n.", m: "增加；提高", e: "Coffee boosts my energy.", e_z: "咖啡提神。", t: "口语很常用" },
+      { w: "cease", ipa: "/siːs/", pos: "v.", m: "停止；终止", e: "Cease fire immediately!", e_z: "立即停火！", t: "和 seize（抓住）区分" },
+      { w: "collaborate", ipa: "/kəˈlæbəreɪt/", pos: "v.", m: "合作；协作", e: "Let's collaborate on this project.", e_z: "我们合作这个项目吧。", t: "职场高频" },
+      { w: "compensate", ipa: "/ˈkɒmpenseɪt/", pos: "v.", m: "补偿；弥补", e: "Money can't compensate for loss.", e_z: "钱不能弥补损失。", t: "和「补偿」同源" },
+      { w: "comprehensive", ipa: "/ˌkɒmprɪˈhensɪv/", pos: "adj.", m: "全面的；综合的", e: "A comprehensive guide.", e_z: "一份全面的指南。", t: "写作必备高级词" },
+      { w: "compromise", ipa: "/ˈkɒmprəmaɪz/", pos: "v./n.", m: "妥协；折中", e: "Let's reach a compromise.", e_z: "我们达成妥协吧。", t: "职场谈判必备" },
+      { w: "conceive", ipa: "/kənˈsiːv/", pos: "v.", m: "构想；设想", e: "She conceived a brilliant idea.", e_z: "她构想出一个绝妙主意。", t: "和「概念 concept」同源" },
+      { w: "conclude", ipa: "/kənˈkluːd/", pos: "v.", m: "得出结论；结束", e: "Let's conclude the meeting.", e_z: "我们结束会议吧。", t: "和「包含 include」对照" },
+      { w: "consequence", ipa: "/ˈkɒnsɪkwəns/", pos: "n.", m: "后果；结果", e: "Actions have consequences.", e_z: "行动有后果。", t: "常用 consequence of" },
+      { w: "consistent", ipa: "/kənˈsɪstənt/", pos: "adj.", m: "始终如一的；一致的", e: "Be consistent in your efforts.", e_z: "保持努力的一致性。", t: "和 constant（持续）区分" },
+      { w: "contribute", ipa: "/kənˈtrɪbjuːt/", pos: "v.", m: "贡献；捐献", e: "Everyone can contribute.", e_z: "每个人都能贡献。", t: "contribute to" },
+      { w: "controversial", ipa: "/ˌkɒntrəˈvɜːʃl/", pos: "adj.", m: "有争议的", e: "A controversial topic.", e_z: "一个有争议的话题。", t: "写作常用替换词" },
+      { w: "convince", ipa: "/kənˈvɪns/", pos: "v.", m: "说服；使信服", e: "She convinced me to go.", e_z: "她说服我去。", t: "和 persuade 互换" },
+      { w: "crucial", ipa: "/ˈkruːʃl/", pos: "adj.", m: "至关重要的", e: "This is a crucial moment.", e_z: "关键时刻。", t: "比 important 强很多" },
+      { w: "deliberate", ipa: "/dɪˈlɪbərət/", pos: "adj.", m: "蓄意的；深思熟虑的", e: "A deliberate lie.", e_z: "蓄意的谎言。", t: "重音在第二个音节" },
+      { w: "demonstrate", ipa: "/ˈdemənstreɪt/", pos: "v.", m: "证明；演示", e: "Let me demonstrate.", e_z: "我来演示。", t: "和「暴乱」同源" },
+      { w: "diminish", ipa: "/dɪˈmɪnɪʃ/", pos: "v.", m: "减少；减小", e: "His courage never diminished.", e_z: "他的勇气从未减少。", t: "和 decrease 类似" },
+      { w: "discrete", ipa: "/dɪˈskriːt/", pos: "adj.", m: "离散的；不连续的", e: "Two discrete categories.", e_z: "两个独立的类别。", t: "和 discreet（谨慎的）区分" },
+      { w: "efficient", ipa: "/ɪˈfɪʃnt/", pos: "adj.", m: "高效的", e: "An efficient worker.", e_z: "高效的员工。", t: "反义词 inefficient" },
+      { w: "establish", ipa: "/ɪˈstæblɪʃ/", pos: "v.", m: "建立；确立", e: "Establish a new rule.", e_z: "建立新规则。", t: "和「稳定的」同源" },
+      { w: "eventually", ipa: "/ɪˈventʃuəli/", pos: "adv.", m: "最终；终于", e: "Eventually, it worked out.", e_z: "最终它成功了。", t: "写作过渡词" },
+    ];
+
+    function dayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / 86400000);
+    }
+
+    function render() {
+      const idx = dayOfYear() % WORDS.length;
+      const nextIdx = (idx + 1) % WORDS.length;
+      const w = WORDS[idx];
+      const next = WORDS[nextIdx];
+
+      document.getElementById('wordCard').innerHTML = `
+        <div class="glass rounded-[28px] p-6 text-center fade-in">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-4">Today's Word</p>
+          <div class="text-[52px] font-bold ink leading-none mb-3 tracking-tight">${w.w}</div>
+          <div class="ipa text-[16px] text-gray-700 mb-2">${w.ipa} <span class="text-gray-500">· ${w.pos}</span></div>
+          <div class="divider-line my-4"></div>
+          <div class="text-[18px] font-semibold ink mb-4">${w.m}</div>
+          <div class="bg-white/40 rounded-2xl p-3.5 text-left">
+            <p class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-1.5">例句 · Example</p>
+            <p class="text-[14px] text-ink leading-relaxed font-medium">${w.e}</p>
+            <p class="text-[12px] text-gray-500 mt-1">${w.e_z}</p>
+          </div>
+          <div class="mt-4 text-[12px] text-gray-500 leading-relaxed">
+            <i class="fas fa-lightbulb text-amber-500 mr-1"></i>${w.t}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('progressText').textContent = `第 ${idx + 1} / ${WORDS.length} 词`;
+      document.getElementById('nextWord').textContent = next.w;
+    }
+
+    function goHome() { window.location.href = 'home.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    render();
+  </script>
+</body>
+</html>

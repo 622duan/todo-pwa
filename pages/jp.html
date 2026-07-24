@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>每日日语 · todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: linear-gradient(180deg, #FAF7F2 0%, #F4F1EA 100%); min-height: 100vh; -webkit-font-smoothing: antialiased; color: #0F172A; overflow-x: hidden; }
+    .glass { background: rgba(255,255,255,0.65); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255,255,255,0.7); }
+    .ink { color: #0F172A; }
+    .bg-ink { background: #0F172A; }
+    .brand { color: #84A98C; }
+    .bg-brand { background: #84A98C; }
+    .accent { color: #E76F51; }
+    .bg-accent { background: #E76F51; }
+    .scroll-area { height: calc(100vh - 80px); overflow-y: auto; padding: 0 20px 20px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .word-hero { font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif; line-height: 1.1; }
+    .kanji-display { font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'STSong', serif; }
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #E76F51; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    .tab-btn.active { color: #0F172A; }
+    .tab-btn.active i { transform: scale(1.1); }
+    .tab-btn i { transition: transform 0.2s; }
+    .tab-btn { color: #94a3b8; transition: color 0.2s; }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .divider-line { background: linear-gradient(90deg, transparent, rgba(15,23,42,0.15), transparent); height: 1px; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#84A98C', accent: '#E76F51' } } } }
+  </script>
+</head>
+<body>
+  <!-- Header -->
+  <div class="px-5 pt-3 pb-3">
+    <div class="flex items-center justify-between mb-1">
+      <button onclick="goHome()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center">
+        <i class="fas fa-chevron-left text-sm"></i>
+      </button>
+      <h2 class="text-[15px] font-semibold flex items-center gap-1.5">
+        <span class="pulse-dot"></span>
+        每日日语
+      </h2>
+      <div class="w-9 h-9"></div>
+    </div>
+    <p class="text-[11px] text-gray-500 text-center mt-1" id="dateLabel">N5 · 每天一词</p>
+  </div>
+
+  <!-- Content -->
+  <div class="scroll-area">
+    <div id="wordCard" class="fade-in">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Tip card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <p class="text-[12px] text-gray-600 leading-relaxed">
+        <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i>
+        <strong>小贴士</strong>：50 天一轮回，50 个 N5 高频词。每天 1 个，一个月后能跟日本朋友打招呼、点菜、问路了。
+      </p>
+    </div>
+
+    <!-- Streak card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500">今日进度</p>
+          <p class="text-[15px] font-semibold mt-0.5" id="progressText">第 1 / 50 词</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[11px] text-gray-500">明日</p>
+          <p class="text-[13px] font-medium mt-0.5" id="nextWord">—</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full flex items-center justify-around py-2.5 px-2 shadow-lg" style="border-radius: 999px;">
+      <button onclick="goPage('home.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-house text-[15px]"></i><span class="text-[10px] font-medium">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-newspaper text-[15px]"></i><span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button onclick="goPage('all-tasks.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-list text-[15px]"></i><span class="text-[10px] font-medium">全部</span>
+      </button>
+      <button onclick="goPage('settings.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-gear text-[15px]"></i><span class="text-[10px] font-medium">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const WORDS = [
+      { k: "こんにちは", h: "こんにちは", r: "konnichiwa", m: "你好；您好", e_j: "田中さん、こんにちは。", e_z: "田中先生，你好。", t: "白天使用，从上午到傍晚都合适" },
+      { k: "ありがとう", h: "ありがとう", r: "arigatō", m: "谢谢", e_j: "ご親切にありがとう。", e_z: "谢谢你的好意。", t: "日常感谢，最常用的礼貌用语" },
+      { k: "すみません", h: "すみません", r: "sumimasen", m: "不好意思；对不起", e_j: "すみません、駅はどこですか。", e_z: "不好意思，车站在哪里？", t: "万能道歉词+搭话词" },
+      { k: "おはよう", h: "おはよう", r: "ohayō", m: "早上好", e_j: "おはようございます。", e_z: "早上好（敬语）。", t: "早晨见面必说" },
+      { k: "こんばんは", h: "こんばんは", r: "konbanwa", m: "晚上好", e_j: "みなさんこんばんは。", e_z: "大家晚上好。", t: "天黑后见面用" },
+      { k: "おやすみ", h: "おやすみ", r: "oyasumi", m: "晚安；睡个好觉", e_j: "おやすみなさい。", e_z: "晚安（敬语）。", t: "睡前/道别时用" },
+      { k: "いただきます", h: "いただきます", r: "itadakimasu", m: "我开动了（饭前）", e_j: "いただきます！", e_z: "我开动了！", t: "吃饭前必说" },
+      { k: "ごちそうさま", h: "ごちそうさま", r: "gochisōsama", m: "承蒙款待（饭后）", e_j: "ごちそうさまでした。", e_z: "承蒙款待了。", t: "吃完饭/收到礼物时说" },
+      { k: "はい", h: "はい", r: "hai", m: "是；好的", e_j: "はい、わかりました。", e_z: "好的，我知道了。", t: "万能肯定回答" },
+      { k: "いいえ", h: "いいえ", r: "iie", m: "不；不是", e_j: "いいえ、違います。", e_z: "不，不对。", t: "礼貌版否定" },
+      { k: "今日", h: "きょう", r: "kyō", m: "今天", e_j: "今日は暑いです。", e_z: "今天很热。", t: "读作 kyō，不是 kyou" },
+      { k: "明日", h: "あした", r: "ashita", m: "明天", e_j: "明日学校に行きます。", e_z: "明天去学校。", t: "也有读法 ashita 和 asu" },
+      { k: "昨日", h: "きのう", r: "kinō", m: "昨天", e_j: "昨日映画を見ました。", e_z: "昨天看了电影。", t: "口语常读 sakuzitsu 偏正式" },
+      { k: "今", h: "いま", r: "ima", m: "现在", e_j: "今何時ですか。", e_z: "现在几点？", t: "高频时间词" },
+      { k: "時間", h: "じかん", r: "jikan", m: "时间；小时", e_j: "時間がありません。", e_z: "没有时间。", t: "既指时间也指时长" },
+      { k: "水", h: "みず", r: "mizu", m: "水；冷水", e_j: "水をください。", e_z: "请给我水。", t: "点餐/问路必备" },
+      { k: "お茶", h: "おちゃ", r: "ocha", m: "茶；绿茶", e_j: "お茶を飲みませんか。", e_z: "喝杯茶吗？", t: "日本茶文化核心词" },
+      { k: "ご飯", h: "ごはん", r: "gohan", m: "饭；米饭", e_j: "ご飯を食べましょう。", e_z: "吃饭吧。", t: "也可指一顿饭" },
+      { k: "朝", h: "あさ", r: "asa", m: "早上；早晨", e_j: "朝6時に起きます。", e_z: "早上6点起床。", t: "与「朝顔」牵牛花同字" },
+      { k: "夜", h: "よる", r: "yoru", m: "夜晚；晚上", e_j: "夜は静かです。", e_z: "夜晚很安静。", t: "与「夜中」凌晨区分" },
+      { k: "友達", h: "ともだち", r: "tomodachi", m: "朋友", e_j: "友達と遊びます。", e_z: "和朋友玩。", t: "常缩写为「友」" },
+      { k: "家族", h: "かぞく", r: "kazoku", m: "家人；家族", e_j: "家族と住んでいます。", e_z: "和家人一起住。", t: "口语" },
+      { k: "母", h: "はは", r: "haha", m: "妈妈（自称）", e_j: "母は先生です。", e_z: "我妈妈是老师。", t: "对自己妈妈用 haha；别人的用 okaasan" },
+      { k: "父", h: "ちち", r: "chichi", m: "爸爸（自称）", e_j: "父は医者です。", e_z: "我爸爸是医生。", t: "对自己爸爸用 chichi；别人的用 otōsan" },
+      { k: "学生", h: "がくせい", r: "gakusei", m: "学生", e_j: "私は学生です。", e_z: "我是学生。", t: "高中生、大学生都用" },
+      { k: "先生", h: "せんせい", r: "sensei", m: "老师；医生", e_j: "先生に相談します。", e_z: "和老师商量。", t: "对医生、律师也用" },
+      { k: "会社", h: "かいしゃ", r: "kaisha", m: "公司", e_j: "会社に行きます。", e_z: "去公司。", t: "上班族每日必经之地" },
+      { k: "駅", h: "えき", r: "eki", m: "车站", e_j: "駅で会いましょう。", e_z: "在车站见吧。", t: "出门迷路时最有用" },
+      { k: "新幹線", h: "しんかんせん", r: "shinkansen", m: "新干线；高铁", e_j: "新幹線で東京へ行きます。", e_z: "乘新干线去东京。", t: "日本最有名的高铁" },
+      { k: "切符", h: "きっぷ", r: "kippu", m: "票；车票", e_j: "切符を一枚ください。", e_z: "请给我一张票。", t: "坐车买票必备" },
+      { k: "便利", h: "べんり", r: "benri", m: "方便；便利", e_j: "とても便利です。", e_z: "非常方便。", t: "形容词的 na 形" },
+      { k: "綺麗", h: "きれい", r: "kirei", m: "漂亮；干净", e_j: "綺麗な花ですね。", e_z: "好漂亮的花啊。", t: "读 kirei 不读 seirei" },
+      { k: "美味しい", h: "おいしい", r: "oishii", m: "好吃；美味", e_j: "この寿司は美味しいです。", e_z: "这寿司很好吃。", t: "美食评价必备" },
+      { k: "楽しい", h: "たのしい", r: "tanoshii", m: "开心；愉快", e_j: "旅行は楽しかったです。", e_z: "旅行很开心。", t: "i 形容词，肯定直接用" },
+      { k: "面白い", h: "おもしろい", r: "omoshiroi", m: "有趣；有意思", e_j: "面白い映画でした。", e_z: "是部有趣的电影。", t: "也可以说人有趣" },
+      { k: "難しい", h: "むずかしい", r: "muzukashii", m: "困难；难", e_j: "日本語は難しいです。", e_z: "日语很难。", t: "口语常缩成 muzui" },
+      { k: "高い", h: "たかい", r: "takai", m: "高；贵", e_j: "この店は高いです。", e_z: "这家店很贵。", t: "一词两义，看语境" },
+      { k: "安い", h: "やすい", r: "yasui", m: "便宜；低", e_j: "安くて良いです。", e_z: "便宜又好。", t: "砍价/比价必备" },
+      { k: "新しい", h: "あたらしい", r: "atarashii", m: "新；新的", e_j: "新しい車を買いました。", e_z: "买了新车。", t: "和「古い」相反" },
+      { k: "古い", h: "ふるい", r: "furui", m: "旧；古老", e_j: "古い友達です。", e_z: "老朋友。", t: "可指物品也可指关系" },
+      { k: "大きい", h: "おおきい", r: "ōkii", m: "大；巨大", e_j: "大きい犬ですね。", e_z: "好大的狗啊。", t: "小的是「小さい」chiisai" },
+      { k: "小さい", h: "ちいさい", r: "chiisai", m: "小；微小", e_j: "小さい子供です。", e_z: "是个小孩。", t: "可指年龄也可指尺寸" },
+      { k: "暑い", h: "あつい", r: "atsui", m: "热（天气）", e_j: "今日は暑いです。", e_z: "今天热。", t: "天气用 atsui；触摸用 atsui" },
+      { k: "寒い", h: "さむい", r: "samui", m: "冷（天气）", e_j: "冬は寒いです。", e_z: "冬天很冷。", t: "和「冷たい」触觉冷区分" },
+      { k: "好き", h: "すき", r: "suki", m: "喜欢", e_j: "日本料理が好きです。", e_z: "喜欢日本料理。", t: "na 形容词，告白也用" },
+      { k: "嫌い", h: "きらい", r: "kirai", m: "讨厌；不喜欢", e_j: "野菜は嫌いです。", e_z: "讨厌蔬菜。", t: "na 形容词，注意礼貌程度" },
+      { k: "元気", h: "げんき", r: "genki", m: "健康；有精神", e_j: "お元気ですか。", e_z: "你身体好吗？", t: "寒暄/问候的万能词" },
+      { k: "大丈夫", h: "だいじょうぶ", r: "daijōbu", m: "没关系；没问题", e_j: "大丈夫です、ありがとう。", e_z: "没关系，谢谢。", t: "万能回应用" },
+      { k: "頑張る", h: "がんばる", r: "ganbaru", m: "加油；努力", e_j: "頑張ってください！", e_z: "请加油！", t: "鼓励/自我激励用" },
+      { k: "お疲れ様", h: "おつかれさま", r: "otsukaresama", m: "辛苦了", e_j: "お疲れ様でした。", e_z: "辛苦了（对上级/同事）。", t: "下班/结束工作必说" },
+    ];
+
+    function dayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / 86400000);
+    }
+
+    function render() {
+      const idx = dayOfYear() % WORDS.length;
+      const nextIdx = (idx + 1) % WORDS.length;
+      const w = WORDS[idx];
+      const next = WORDS[nextIdx];
+
+      document.getElementById('wordCard').innerHTML = `
+        <div class="glass rounded-[28px] p-6 text-center fade-in">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-4">Today's Word</p>
+          <div class="kanji-display text-[56px] font-bold ink leading-none mb-3">${w.k}</div>
+          <div class="word-hero text-[18px] text-gray-700 mb-1">${w.h}</div>
+          <div class="text-[14px] text-gray-500 italic mb-5">${w.r}</div>
+          <div class="divider-line my-4"></div>
+          <div class="text-[18px] font-semibold ink mb-4">${w.m}</div>
+          <div class="bg-white/40 rounded-2xl p-3.5 text-left">
+            <p class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-1.5">例句 · Example</p>
+            <p class="word-hero text-[14px] text-ink leading-relaxed">${w.e_j}</p>
+            <p class="text-[12px] text-gray-500 mt-1">${w.e_z}</p>
+          </div>
+          <div class="mt-4 text-[12px] text-gray-500 leading-relaxed">
+            <i class="fas fa-lightbulb text-amber-500 mr-1"></i>${w.t}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('progressText').textContent = `第 ${idx + 1} / ${WORDS.length} 词`;
+      document.getElementById('nextWord').textContent = next.k;
+    }
+
+    function goHome() { window.location.href = 'home.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    render();
+  </script>
+</body>
+</html>

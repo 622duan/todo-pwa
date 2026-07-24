@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>今日摸鱼 · todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: linear-gradient(180deg, #FFF5E1 0%, #FFE4B5 100%); min-height: 100vh; -webkit-font-smoothing: antialiased; color: #0F172A; overflow-x: hidden; }
+    .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255,255,255,0.7); }
+    .ink { color: #0F172A; }
+    .bg-ink { background: #0F172A; }
+    .brand { color: #F4A261; }
+    .bg-brand { background: #F4A261; }
+    .accent { color: #E76F51; }
+    .bg-accent { background: #E76F51; }
+    .scroll-area { height: calc(100vh - 80px); overflow-y: auto; padding: 0 20px 20px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #E76F51; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    .tab-btn.active { color: #0F172A; }
+    .tab-btn.active i { transform: scale(1.1); }
+    .tab-btn i { transition: transform 0.2s; }
+    .tab-btn { color: #94a3b8; transition: color 0.2s; }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .divider-line { background: linear-gradient(90deg, transparent, rgba(15,23,42,0.15), transparent); height: 1px; }
+    .shin-chan-emoji { font-size: 100px; line-height: 1; }
+    .doraemon-emoji { font-size: 100px; line-height: 1; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#F4A261', accent: '#E76F51' } } } }
+  </script>
+</head>
+<body>
+  <!-- Header -->
+  <div class="px-5 pt-3 pb-3">
+    <div class="flex items-center justify-between mb-1">
+      <button onclick="goHome()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center">
+        <i class="fas fa-chevron-left text-sm"></i>
+      </button>
+      <h2 class="text-[15px] font-semibold flex items-center gap-1.5">
+        <span class="pulse-dot"></span>
+        今日摸鱼
+      </h2>
+      <div class="w-9 h-9"></div>
+    </div>
+    <p class="text-[11px] text-gray-500 text-center mt-1" id="dateLabel">每天一集 · 偷偷休息一下</p>
+  </div>
+
+  <!-- Content -->
+  <div class="scroll-area">
+    <div id="cartoonCard" class="fade-in">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Tip card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <p class="text-[12px] text-gray-600 leading-relaxed">
+        <i class="fas fa-couch text-orange-500 mr-1.5"></i>
+        <strong>摸鱼哲学</strong>：蜡笔小新和哆啦A梦轮流出场，每集 5-10 分钟，正好一杯咖啡的时间。脑子累了就看看，比刷短视频有意思。
+      </p>
+    </div>
+
+    <!-- Next day card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500">明日预告</p>
+          <p class="text-[15px] font-semibold mt-0.5" id="nextText">—</p>
+        </div>
+        <button onclick="openBilibiliLink()" class="text-[12px] text-brand font-semibold flex items-center gap-1">
+          <i class="fab fa-bilibili text-[16px]"></i> B站
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full flex items-center justify-around py-2.5 px-2 shadow-lg" style="border-radius: 999px;">
+      <button onclick="goPage('home.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-house text-[15px]"></i><span class="text-[10px] font-medium">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-newspaper text-[15px]"></i><span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button onclick="goPage('all-tasks.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-list text-[15px]"></i><span class="text-[10px] font-medium">全部</span>
+      </button>
+      <button onclick="goPage('settings.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-gear text-[15px]"></i><span class="text-[10px] font-medium">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 蜡笔小新 + 哆啦A梦 · 经典集数清单
+    const SHINCHAN = [
+      { s: 1, e: 1, name: "小新出生了", desc: "一切的开始，搞笑的 5 岁小鬼头登场", emoji: "🦁" },
+      { s: 1, e: 23, name: "野原广志的脚臭", desc: "广志脱鞋瞬间，全家窒息的经典", emoji: "🦁" },
+      { s: 2, e: 5, name: "动感超人 VS 露屁屁星人", desc: "动感超人大战外星人，小新的英雄梦", emoji: "🦸" },
+      { s: 3, e: 12, name: "小葵的诞生", desc: "妹妹小葵到来，小新升级当哥哥", emoji: "👶" },
+      { s: 4, e: 18, name: "春日部防卫队出动", desc: "小新和朋友们组成的童年帮派", emoji: "🌟" },
+      { s: 5, e: 33, name: "野原一家去京都", desc: "全家旅行记，京都篇爆笑不断", emoji: "⛩️" },
+      { s: 5, e: 47, name: "动感超人的真正实力", desc: "动作戏集大成", emoji: "🦸" },
+      { s: 6, e: 8, name: "小新当小队长", desc: "班级竞选乱象", emoji: "🏫" },
+      { s: 7, e: 14, name: "小新的恋爱故事", desc: "小新追女生记，惨烈结局", emoji: "💕" },
+      { s: 8, e: 22, name: "野原家的大危机", desc: "金融危机下广志的房贷压力", emoji: "💸" },
+      { s: 9, e: 30, name: "小白回家了", desc: "流浪狗小白被收养的温馨篇", emoji: "🐕" },
+      { s: 10, e: 11, name: "幼稚园园长老师的秘密", desc: "园长年轻时的故事", emoji: "🎓" },
+    ];
+
+    const DORAEMON = [
+      { s: 1, e: 1, name: "大雄的房间来了一只猫型机器人", desc: "一切的开始，哆啦A梦从书桌抽屉出现", emoji: "🤖" },
+      { s: 1, e: 2, name: "竹蜻蜓", desc: "最经典的道具，头顶一戴就飞", emoji: "🚁" },
+      { s: 1, e: 3, name: "时光机", desc: "坐进抽屉里穿梭时空", emoji: "⏰" },
+      { s: 1, e: 4, name: "任意门", desc: "想去哪就去哪的门", emoji: "🚪" },
+      { s: 1, e: 5, name: "记忆面包", desc: "印在书上吃下去就记住", emoji: "🍞" },
+      { s: 2, e: 1, name: "大雄的恐龙", desc: "大雄孵化出恐龙宝宝", emoji: "🦕" },
+      { s: 3, e: 5, name: "大雄结婚的前夜", desc: "未来新娘静香对大雄的告白", emoji: "💒" },
+      { s: 4, e: 8, name: "大雄的海底鬼岩城", desc: "海底冒险大电影", emoji: "🌊" },
+      { s: 5, e: 12, name: "胖虎的演唱会", desc: "全子供认的最恐怖集", emoji: "🎤" },
+      { s: 5, e: 20, name: "时光警察出动", desc: "穿越时空也要抓人", emoji: "👮" },
+      { s: 6, e: 6, name: "再见，哆啦A梦", desc: "哆啦A梦要回到未来，催泪神作", emoji: "😢" },
+      { s: 6, e: 25, name: "大雄的宇宙开拓史", desc: "大雄当上宇宙英雄", emoji: "🚀" },
+    ];
+
+    const SLACK_QUOTES = [
+      "工作忙不完，休息一下又不会死。",
+      "5 分钟不算偷懒，叫调节大脑。",
+      "老板不在，咖啡要慢点喝。",
+      "今天已经够努力了，看看小新犒劳自己。",
+      "摸鱼是为了更好地打工。",
+      "高质量的休息 = 高效率的搬砖。",
+    ];
+
+    function dayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / 86400000);
+    }
+
+    let TODAY_DATA = null;
+    let TODAY_KEYWORD = '';
+
+    function bilibiliURL(keyword) {
+      return 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(keyword);
+    }
+
+    function render() {
+      const idx = dayOfYear();
+      const isDoraemon = idx % 2 === 0;
+      const list = isDoraemon ? DORAEMON : SHINCHAN;
+      const nextList = isDoraemon ? SHINCHAN : DORAEMON;
+      const show = list[idx % list.length];
+      const next = nextList[(idx + 1) % nextList.length];
+      const quote = SLACK_QUOTES[idx % SLACK_QUOTES.length];
+
+      TODAY_DATA = show;
+      const name = isDoraemon ? '哆啦A梦' : '蜡笔小新';
+      TODAY_KEYWORD = `${name} 第${show.s}季 第${show.e}集 ${show.name}`;
+
+      const accent = isDoraemon ? '#4A90E2' : '#E76F51';
+      const bgAccent = isDoraemon ? '#E3F2FD' : '#FFE0DC';
+
+      document.getElementById('cartoonCard').innerHTML = `
+        <div class="glass rounded-[28px] p-6 text-center fade-in">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-4">Today's Cartoon</p>
+          <div class="rounded-[24px] py-6 mb-4" style="background: ${bgAccent};">
+            <div style="font-size: 96px; line-height: 1;">${show.emoji}</div>
+          </div>
+          <div class="text-[22px] font-bold ink leading-tight mb-1">${name}</div>
+          <div class="text-[13px] text-gray-500 mb-3">第 ${show.s} 季 · 第 ${show.e} 集</div>
+          <div class="text-[17px] font-semibold ink mb-3">「${show.name}」</div>
+          <div class="divider-line my-3"></div>
+          <p class="text-[13px] text-gray-600 leading-relaxed text-left px-2">${show.desc}</p>
+          <div class="mt-4 bg-white/40 rounded-2xl p-3">
+            <p class="text-[12px] text-gray-600 italic">"${quote}"</p>
+          </div>
+          <a href="${bilibiliURL(TODAY_KEYWORD)}" target="_blank" rel="noopener" class="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-ink text-white text-[14px] font-semibold">
+            <i class="fab fa-bilibili text-[16px]"></i> 去 B站 看这集
+          </a>
+        </div>
+      `;
+
+      document.getElementById('nextText').textContent = `明日：${isDoraemon ? '蜡笔小新' : '哆啦A梦'} 第${next.s}季 第${next.e}集`;
+    }
+
+    function openBilibiliLink() {
+      window.open(bilibiliURL(TODAY_KEYWORD), '_blank', 'noopener');
+    }
+
+    function goHome() { window.location.href = 'home.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    render();
+  </script>
+</body>
+</html>
