@@ -438,13 +438,17 @@
         const c = this.columns[col];
         return c.length ? c[c.length - 1] : null;
       }
-      // How many cards from bottom are a movable sequence (descending alternating colors)
+      // How many cards from top are a movable sequence (descending alternating colors)
+      // With column-reverse, c[length-1] is the TOP of the display (the card the user picks up first)
+      // The movable sequence extends DOWNWARD from there
       movableCount(col) {
         const c = this.columns[col];
         if (!c.length) return 0;
         let n = 1;
         for (let i = c.length - 2; i >= 0; i--) {
-          if (c[i].rank === c[i+1].rank + 1 && c[i].color !== c[i+1].color) n++;
+          // c[i+1] is above c[i] in display (with column-reverse)
+          // Valid if c[i+1] is 1 LARGER than c[i] (descending sequence top→bottom)
+          if (c[i+1].rank === c[i].rank + 1 && c[i+1].color !== c[i].color) n++;
           else break;
         }
         return n;
@@ -452,7 +456,9 @@
       canPlace(src, count, dst) {
         if (src === dst) return false;
         if (this.columns[dst].length === 0) return true;
-        const first = this.columns[src][this.columns[src].length - count];
+        // The TOPMOST card of the moving sequence is placed first on the new column
+        // It must be 1 less than the old top of the new column
+        const first = this.columns[src][this.columns[src].length - 1];
         const t = this.columns[dst][this.columns[dst].length - 1];
         return t.rank === first.rank + 1;
       }
@@ -482,9 +488,12 @@
       checkComplete(col) {
         const c = this.columns[col];
         if (c.length < 13) return;
+        // With column-reverse, last 13 cards are the TOP 13 in display
+        // K-to-A from top to bottom: K(13), Q(12), ..., A(1)
+        // So last[0] = A = 1, last[1] = 2, ..., last[12] = K = 13
         const last = c.slice(-13);
         for (let i = 0; i < 13; i++) {
-          if (last[i].rank !== 13 - i) return;
+          if (last[i].rank !== i + 1) return;
         }
         this.columns[col] = c.slice(0, c.length - 13);
         this.completed++;
@@ -530,7 +539,7 @@
           const sel = this.selected && this.selected.src === col;
           const selCount = sel ? this.selected.count : 0;
           const movCnt = this.movableCount(col);
-          html += `<div class="flex flex-col">`;
+          html += `<div class="flex flex-col-reverse">`;
           // Empty column placeholder
           if (cArr.length === 0) {
             html += `<button onclick="spider.selectOrMove(${col})" class="w-full h-16 rounded-lg border-2 border-dashed border-gray-300 bg-white/30"></button>`;
