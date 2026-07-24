@@ -51,7 +51,8 @@
 
   <!-- Content -->
   <div class="scroll-area">
-    <div id="cartoonCard" class="fade-in">
+    <!-- Main hero card: today's manga -->
+    <div class="glass rounded-[28px] p-5 fade-in" id="mangaHeroCard">
       <!-- populated by JS -->
     </div>
 
@@ -64,17 +65,9 @@
       <p class="text-[14px] ink leading-relaxed font-medium" id="slackQuote">—</p>
     </div>
 
-    <!-- Next day card -->
-    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-[11px] text-gray-500">明日预告</p>
-          <p class="text-[15px] font-semibold mt-0.5" id="nextText">—</p>
-        </div>
-        <button onclick="openBilibiliLink()" class="text-[12px] text-brand font-semibold flex items-center gap-1">
-          <i class="fab fa-bilibili text-[16px]"></i> B站
-        </button>
-      </div>
+    <!-- Manga card (replaces next-day card) -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in" id="mangaCard">
+      <!-- populated by JS -->
     </div>
 
     <!-- Games section -->
@@ -126,36 +119,15 @@
   </div>
 
   <script>
-    // 蜡笔小新 + 哆啦A梦 · 经典集数清单
-    const SHINCHAN = [
-      { s: 1, e: 1, name: "小新出生了", desc: "一切的开始，搞笑的 5 岁小鬼头登场", emoji: "🦁" },
-      { s: 1, e: 23, name: "野原广志的脚臭", desc: "广志脱鞋瞬间，全家窒息的经典", emoji: "🦁" },
-      { s: 2, e: 5, name: "动感超人 VS 露屁屁星人", desc: "动感超人大战外星人，小新的英雄梦", emoji: "🦸" },
-      { s: 3, e: 12, name: "小葵的诞生", desc: "妹妹小葵到来，小新升级当哥哥", emoji: "👶" },
-      { s: 4, e: 18, name: "春日部防卫队出动", desc: "小新和朋友们组成的童年帮派", emoji: "🌟" },
-      { s: 5, e: 33, name: "野原一家去京都", desc: "全家旅行记，京都篇爆笑不断", emoji: "⛩️" },
-      { s: 5, e: 47, name: "动感超人的真正实力", desc: "动作戏集大成", emoji: "🦸" },
-      { s: 6, e: 8, name: "小新当小队长", desc: "班级竞选乱象", emoji: "🏫" },
-      { s: 7, e: 14, name: "小新的恋爱故事", desc: "小新追女生记，惨烈结局", emoji: "💕" },
-      { s: 8, e: 22, name: "野原家的大危机", desc: "金融危机下广志的房贷压力", emoji: "💸" },
-      { s: 9, e: 30, name: "小白回家了", desc: "流浪狗小白被收养的温馨篇", emoji: "🐕" },
-      { s: 10, e: 11, name: "幼稚园园长老师的秘密", desc: "园长年轻时的故事", emoji: "🎓" },
-    ];
+    // 今日摸鱼读物 (从用户分享的百度网盘读取)
+    const MANGA = {
+      title: '今日摸鱼读物',
+      desc: '百度网盘 · 用户分享的漫画',
+      emoji: '📚',
+      url: 'https://pan.baidu.com/s/1qrRV7YZ4HtNuU53GCVD5wQ?pwd=vxlf',
+      pwd: 'vxlf',
+    };
 
-    const DORAEMON = [
-      { s: 1, e: 1, name: "大雄的房间来了一只猫型机器人", desc: "一切的开始，哆啦A梦从书桌抽屉出现", emoji: "🤖" },
-      { s: 1, e: 2, name: "竹蜻蜓", desc: "最经典的道具，头顶一戴就飞", emoji: "🚁" },
-      { s: 1, e: 3, name: "时光机", desc: "坐进抽屉里穿梭时空", emoji: "⏰" },
-      { s: 1, e: 4, name: "任意门", desc: "想去哪就去哪的门", emoji: "🚪" },
-      { s: 1, e: 5, name: "记忆面包", desc: "印在书上吃下去就记住", emoji: "🍞" },
-      { s: 2, e: 1, name: "大雄的恐龙", desc: "大雄孵化出恐龙宝宝", emoji: "🦕" },
-      { s: 3, e: 5, name: "大雄结婚的前夜", desc: "未来新娘静香对大雄的告白", emoji: "💒" },
-      { s: 4, e: 8, name: "大雄的海底鬼岩城", desc: "海底冒险大电影", emoji: "🌊" },
-      { s: 5, e: 12, name: "胖虎的演唱会", desc: "全子供认的最恐怖集", emoji: "🎤" },
-      { s: 5, e: 20, name: "时光警察出动", desc: "穿越时空也要抓人", emoji: "👮" },
-      { s: 6, e: 6, name: "再见，哆啦A梦", desc: "哆啦A梦要回到未来，催泪神作", emoji: "😢" },
-      { s: 6, e: 25, name: "大雄的宇宙开拓史", desc: "大雄当上宇宙英雄", emoji: "🚀" },
-    ];
 
     const SLACK_QUOTES = [
       "工作忙不完，休息一下又不会死。",
@@ -173,54 +145,89 @@
     }
 
     let TODAY_DATA = null;
-    let TODAY_KEYWORD = '';
-
-    function bilibiliURL(keyword) {
-      return 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(keyword);
-    }
 
     function render() {
-      const idx = dayOfYear();
-      const isDoraemon = idx % 2 === 0;
-      const list = isDoraemon ? DORAEMON : SHINCHAN;
-      const nextList = isDoraemon ? SHINCHAN : DORAEMON;
-      const show = list[idx % list.length];
-      const next = nextList[(idx + 1) % nextList.length];
-      const quote = SLACK_QUOTES[idx % SLACK_QUOTES.length];
+      const quote = SLACK_QUOTES[dayOfYear() % SLACK_QUOTES.length];
 
       // Render the 摸鱼小句 in the tip card
       const quoteEl = document.getElementById('slackQuote');
       if (quoteEl) quoteEl.textContent = '"' + quote + '"';
 
-      TODAY_DATA = show;
-      const name = isDoraemon ? '哆啦A梦' : '蜡笔小新';
-      TODAY_KEYWORD = `${name} 第${show.s}季 第${show.e}集 ${show.name}`;
-
-      const accent = isDoraemon ? '#4A90E2' : '#E76F51';
-      const bgAccent = isDoraemon ? '#E3F2FD' : '#FFE0DC';
-
-      document.getElementById('cartoonCard').innerHTML = `
-        <div class="glass rounded-[28px] p-6 text-center fade-in">
-          <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-4">Today's Cartoon</p>
-          <div class="rounded-[24px] py-6 mb-4" style="background: ${bgAccent};">
-            <div style="font-size: 96px; line-height: 1;">${show.emoji}</div>
+      // Render the manga hero card (big, eye-catching)
+      const hero = document.getElementById('mangaHeroCard');
+      if (hero) {
+        hero.innerHTML = `
+          <div class="text-center">
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-3">Today's Manga</p>
+            <div class="rounded-[24px] py-7 mb-4" style="background: linear-gradient(135deg, #FFE4B5 0%, #FFC988 100%);">
+              <div style="font-size: 88px; line-height: 1;">${MANGA.emoji}</div>
+            </div>
+            <div class="text-[22px] font-bold ink leading-tight mb-1">${MANGA.title}</div>
+            <div class="text-[13px] text-gray-500 mb-1">${MANGA.desc}</div>
+            <div class="text-[12px] text-gray-400 mb-3">
+              <i class="fas fa-link mr-1"></i>百度网盘 · 密码已预填
+            </div>
+            <button onclick="openManga()" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-ink text-white text-[14px] font-semibold">
+              <i class="fas fa-external-link-alt text-[12px]"></i> 打开网盘看
+            </button>
+            <button onclick="copyPassword()" class="mt-2 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 text-amber-700 text-[12px] font-medium">
+              <i class="fas fa-copy text-[11px]"></i> 复制链接 + 密码 (${MANGA.pwd})
+            </button>
           </div>
-          <div class="text-[22px] font-bold ink leading-tight mb-1">${name}</div>
-          <div class="text-[13px] text-gray-500 mb-3">第 ${show.s} 季 · 第 ${show.e} 集</div>
-          <div class="text-[17px] font-semibold ink mb-3">「${show.name}」</div>
-          <div class="divider-line my-3"></div>
-          <p class="text-[13px] text-gray-600 leading-relaxed text-left px-2">${show.desc}</p>
-          <a href="${bilibiliURL(TODAY_KEYWORD)}" target="_blank" rel="noopener" class="mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-ink text-white text-[14px] font-semibold">
-            <i class="fab fa-bilibili text-[16px]"></i> 去 B站 看这集
-          </a>
-        </div>
-      `;
+        `;
+      }
 
-      document.getElementById('nextText').textContent = `明日：${isDoraemon ? '蜡笔小新' : '哆啦A梦'} 第${next.s}季 第${next.e}集`;
+      // Render the smaller manga card
+      const mc = document.getElementById('mangaCard');
+      if (mc) {
+        mc.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="text-[28px]">${MANGA.emoji}</div>
+            <div class="flex-1">
+              <p class="text-[11px] text-gray-500">今日摸鱼读物</p>
+              <p class="text-[14px] font-semibold ink mt-0.5">${MANGA.title}</p>
+            </div>
+            <button onclick="copyPassword()" class="text-[11px] text-amber-600 underline">复制密码</button>
+          </div>
+        `;
+      }
     }
 
-    function openBilibiliLink() {
-      window.open(bilibiliURL(TODAY_KEYWORD), '_blank', 'noopener');
+    function openManga() {
+      window.open(MANGA.url, '_blank', 'noopener');
+    }
+    function copyPassword() {
+      const text = `链接：${MANGA.url}\n密码：${MANGA.pwd}`;
+      const fallback = () => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        showToast('已复制链接和密码');
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast('已复制链接和密码'), fallback);
+      } else {
+        fallback();
+      }
+    }
+    let toastTimer = null;
+    function showToast(msg) {
+      let t = document.getElementById('toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        t.className = 'fixed left-1/2 -translate-x-1/2 bottom-24 bg-ink text-white text-[13px] px-4 py-2 rounded-full shadow-lg z-[100] opacity-0 transition-opacity';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 1800);
     }
 
     // ============================================================
