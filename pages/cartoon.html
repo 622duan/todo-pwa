@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>今日摸鱼 · todo</title>
+  <title>摸鱼办 · todo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -42,7 +42,7 @@
       </button>
       <h2 class="text-[15px] font-semibold flex items-center gap-1.5">
         <span class="pulse-dot"></span>
-        今日摸鱼
+        摸鱼办
       </h2>
       <div class="w-9 h-9"></div>
     </div>
@@ -59,7 +59,7 @@
     <div class="glass rounded-[20px] p-4 mt-3 fade-in">
       <p class="text-[12px] text-gray-600 leading-relaxed">
         <i class="fas fa-couch text-orange-500 mr-1.5"></i>
-        <strong>摸鱼哲学</strong>：蜡笔小新和哆啦A梦轮流出场，每集 5-10 分钟，正好一杯咖啡的时间。脑子累了就看看，比刷短视频有意思。
+        <strong>摸鱼哲学</strong>：蜡笔小新和哆啦A梦轮流出场，每集 5-10 分钟，正好一杯咖啡的时间。下面是今日份的摸鱼小句。
       </p>
     </div>
 
@@ -74,6 +74,39 @@
           <i class="fab fa-bilibili text-[16px]"></i> B站
         </button>
       </div>
+    </div>
+
+    <!-- Games section -->
+    <div class="mt-3">
+      <p class="text-[11px] uppercase tracking-widest text-gray-500 font-semibold mb-2 px-1">摸鱼小游戏</p>
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="openGame('g2048')" class="glass rounded-2xl p-3 text-center active:scale-95 transition">
+          <div class="text-[32px] mb-1">🧮</div>
+          <p class="text-[12px] font-semibold ink">2048</p>
+        </button>
+        <button onclick="openGame('gsudoku')" class="glass rounded-2xl p-3 text-center active:scale-95 transition">
+          <div class="text-[32px] mb-1">🧩</div>
+          <p class="text-[12px] font-semibold ink">数独</p>
+        </button>
+        <button onclick="openGame('gsnake')" class="glass rounded-2xl p-3 text-center active:scale-95 transition">
+          <div class="text-[32px] mb-1">🐍</div>
+          <p class="text-[12px] font-semibold ink">贪吃蛇</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game modal (fullscreen overlay) -->
+  <div id="gameModal" class="fixed inset-0 z-[60] hidden" style="background: linear-gradient(180deg, #FFF5E1 0%, #FFE4B5 100%);">
+    <div class="h-full flex flex-col">
+      <div class="px-5 pt-3 pb-3 flex items-center justify-between">
+        <button onclick="closeGame()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center">
+          <i class="fas fa-chevron-left text-sm"></i>
+        </button>
+        <h2 class="text-[15px] font-semibold" id="gameTitle">2048</h2>
+        <div class="w-9 h-9"></div>
+      </div>
+      <div id="gameContent" class="flex-1 overflow-auto px-4 pb-4"></div>
     </div>
   </div>
 
@@ -190,6 +223,501 @@
 
     function openBilibiliLink() {
       window.open(bilibiliURL(TODAY_KEYWORD), '_blank', 'noopener');
+    }
+
+    // ============================================================
+    // ===  摸鱼游戏 (2048 / 数独 / 贪吃蛇) ====================
+    // ============================================================
+
+    const GAMES = {
+      g2048: { name: '2048', render: render2048 },
+      gsudoku: { name: '数独', render: renderSudoku },
+      gsnake: { name: '贪吃蛇', render: renderSnake },
+    };
+    let currentGame = null;
+
+    function openGame(key) {
+      const g = GAMES[key];
+      if (!g) return;
+      currentGame = key;
+      document.getElementById('gameTitle').textContent = g.name;
+      document.getElementById('gameModal').classList.remove('hidden');
+      g.render();
+    }
+    function closeGame() {
+      document.getElementById('gameModal').classList.add('hidden');
+      if (currentGame === 'gsnake' && typeof snakeStop === 'function') snakeStop();
+      currentGame = null;
+    }
+
+    // ---------------- 2048 ----------------
+    let g2048 = null;
+    function render2048() {
+      if (!g2048) g2048 = new Game2048();
+      g2048.render();
+    }
+    class Game2048 {
+      constructor() {
+        this.size = 4;
+        this.grid = [];
+        this.score = 0;
+        this.best = parseInt(localStorage.getItem('todo_2048_best') || '0');
+        this.reset();
+      }
+      reset() {
+        this.grid = Array.from({length: this.size}, () => Array(this.size).fill(0));
+        this.score = 0;
+        this.addTile(); this.addTile();
+      }
+      addTile() {
+        const empty = [];
+        for (let r = 0; r < this.size; r++)
+          for (let c = 0; c < this.size; c++)
+            if (this.grid[r][c] === 0) empty.push([r, c]);
+        if (!empty.length) return;
+        const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+        this.grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+      }
+      move(dir) {
+        const old = JSON.stringify(this.grid);
+        let add = 0;
+        for (let i = 0; i < this.size; i++) {
+          let line = [];
+          for (let j = 0; j < this.size; j++) {
+            if (dir === 'L') line.push(this.grid[i][j]);
+            else if (dir === 'R') line.push(this.grid[i][this.size-1-j]);
+            else if (dir === 'U') line.push(this.grid[j][i]);
+            else line.push(this.grid[this.size-1-j][i]);
+          }
+          const filtered = line.filter(x => x);
+          const merged = [];
+          for (let k = 0; k < filtered.length; k++) {
+            if (k+1 < filtered.length && filtered[k] === filtered[k+1]) {
+              merged.push(filtered[k]*2);
+              add += filtered[k]*2;
+              k++;
+            } else merged.push(filtered[k]);
+          }
+          while (merged.length < this.size) merged.push(0);
+          for (let j = 0; j < this.size; j++) {
+            if (dir === 'L') this.grid[i][j] = merged[j];
+            else if (dir === 'R') this.grid[i][this.size-1-j] = merged[j];
+            else if (dir === 'U') this.grid[j][i] = merged[j];
+            else this.grid[this.size-1-j][i] = merged[j];
+          }
+        }
+        if (JSON.stringify(this.grid) !== old) {
+          this.score += add;
+          if (this.score > this.best) {
+            this.best = this.score;
+            localStorage.setItem('todo_2048_best', String(this.best));
+          }
+          this.addTile();
+        }
+      }
+      isOver() {
+        for (let r = 0; r < this.size; r++)
+          for (let c = 0; c < this.size; c++) {
+            if (!this.grid[r][c]) return false;
+            if (c+1 < this.size && this.grid[r][c] === this.grid[r][c+1]) return false;
+            if (r+1 < this.size && this.grid[r][c] === this.grid[r+1][c]) return false;
+          }
+        return true;
+      }
+      tileColor(v) {
+        const m = {
+          2:'bg-amber-50 text-amber-800', 4:'bg-amber-100 text-amber-900',
+          8:'bg-orange-300 text-white', 16:'bg-orange-400 text-white',
+          32:'bg-red-400 text-white', 64:'bg-red-500 text-white',
+          128:'bg-yellow-300 text-yellow-900', 256:'bg-yellow-400 text-white',
+          512:'bg-yellow-500 text-white', 1024:'bg-amber-500 text-white',
+          2048:'bg-gradient-to-br from-yellow-400 to-red-500 text-white',
+        };
+        return m[v] || (v ? 'bg-purple-500 text-white' : 'bg-white/30');
+      }
+      render() {
+        const c = document.getElementById('gameContent');
+        c.innerHTML = `
+          <div class="flex justify-between items-center mb-3 px-1">
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">分数</div>
+              <div class="text-[20px] font-bold ink">${this.score}</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">最高</div>
+              <div class="text-[20px] font-bold text-amber-600">${this.best}</div>
+            </div>
+            <button onclick="g2048.reset();g2048.render()" class="px-4 py-2 rounded-xl bg-ink text-white text-[13px] font-semibold">新局</button>
+          </div>
+          <div class="grid grid-cols-4 gap-2 bg-amber-900/10 p-2 rounded-2xl">
+            ${this.grid.flat().map(v => `<div class="aspect-square rounded-lg flex items-center justify-center text-[20px] font-bold ${this.tileColor(v)}">${v||''}</div>`).join('')}
+          </div>
+          ${this.isOver() ? '<div class="mt-4 text-center"><p class="text-amber-600 text-[16px] font-bold mb-2">游戏结束</p><button onclick="g2048.reset();g2048.render()" class="px-5 py-2.5 rounded-xl bg-ink text-white text-[13px] font-semibold">再来一局</button></div>' : ''}
+          <p class="text-[11px] text-gray-500 text-center mt-3">滑动屏幕 · 合并相同数字 · 达到 2048</p>
+        `;
+        this.attachSwipe();
+      }
+      attachSwipe() {
+        const c = document.getElementById('gameContent');
+        if (c.dataset.swipe) return;
+        c.dataset.swipe = '1';
+        let sx, sy;
+        c.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive: true});
+        c.addEventListener('touchend', e => {
+          const dx = e.changedTouches[0].clientX - sx;
+          const dy = e.changedTouches[0].clientY - sy;
+          if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+          if (Math.abs(dx) > Math.abs(dy)) this.move(dx > 0 ? 'R' : 'L');
+          else this.move(dy > 0 ? 'D' : 'U');
+          this.render();
+        });
+        // Keyboard for desktop
+        document.addEventListener('keydown', this.keyHandler = e => {
+          const k = e.key;
+          if (k === 'ArrowLeft') this.move('L');
+          else if (k === 'ArrowRight') this.move('R');
+          else if (k === 'ArrowUp') this.move('U');
+          else if (k === 'ArrowDown') this.move('D');
+          else return;
+          this.render();
+        });
+      }
+    }
+
+    // ---------------- 数独 ----------------
+    const SUDOKU_PUZZLES = [
+      // 简单: 5 提示
+      {
+        puzzle: [
+          [5,3,0,0,7,0,0,0,0],
+          [6,0,0,1,9,5,0,0,0],
+          [0,9,8,0,0,0,0,6,0],
+          [8,0,0,0,6,0,0,0,3],
+          [4,0,0,8,0,3,0,0,1],
+          [7,0,0,0,2,0,0,0,6],
+          [0,6,0,0,0,0,2,8,0],
+          [0,0,0,4,1,9,0,0,5],
+          [0,0,0,0,8,0,0,7,9],
+        ],
+      },
+      {
+        puzzle: [
+          [0,0,0,2,6,0,7,0,1],
+          [6,8,0,0,7,0,0,9,0],
+          [1,9,0,0,0,4,5,0,0],
+          [8,2,0,1,0,0,0,4,0],
+          [0,0,4,6,0,2,9,0,0],
+          [0,5,0,0,0,3,0,2,8],
+          [0,0,9,3,0,0,0,7,4],
+          [0,4,0,0,5,0,0,3,6],
+          [7,0,3,0,1,8,0,0,0],
+        ],
+      },
+      {
+        puzzle: [
+          [0,2,0,0,0,0,0,0,0],
+          [0,0,0,6,0,0,0,0,3],
+          [0,7,4,0,8,0,0,0,0],
+          [0,0,0,0,0,3,0,0,2],
+          [0,8,0,0,4,0,0,1,0],
+          [6,0,0,5,0,0,0,0,0],
+          [0,0,0,0,1,0,2,8,0],
+          [5,0,0,0,0,9,0,0,0],
+          [0,0,0,0,0,0,0,4,0],
+        ],
+      },
+      {
+        puzzle: [
+          [1,0,0,0,0,7,0,9,0],
+          [0,3,0,0,2,0,0,0,8],
+          [0,0,9,6,0,0,5,0,0],
+          [0,0,5,3,0,0,9,0,0],
+          [0,1,0,0,8,0,0,0,2],
+          [6,0,0,0,0,4,0,0,0],
+          [3,0,0,0,0,0,0,1,0],
+          [0,4,0,0,0,0,0,0,7],
+          [0,0,7,0,0,0,3,0,0],
+        ],
+      },
+      {
+        puzzle: [
+          [0,0,0,0,0,0,6,8,0],
+          [0,0,0,0,7,3,0,0,9],
+          [3,0,9,0,0,0,0,4,5],
+          [4,9,0,0,0,0,0,0,0],
+          [8,0,3,0,5,0,9,0,2],
+          [0,0,0,0,0,0,0,3,6],
+          [9,6,0,0,0,0,3,0,8],
+          [7,0,0,6,8,0,0,0,0],
+          [0,2,8,0,0,0,1,0,0],
+        ],
+      },
+    ];
+    let sudoku = null;
+    function renderSudoku() {
+      if (!sudoku) sudoku = new SudokuGame();
+      sudoku.render();
+    }
+    class SudokuGame {
+      constructor() {
+        const idx = (new Date().getDate()) % SUDOKU_PUZZLES.length;
+        this.puzzle = SUDOKU_PUZZLES[idx].puzzle.map(row => [...row]);
+        this.solution = this.solve(JSON.parse(JSON.stringify(this.puzzle)));
+        this.current = this.puzzle.map(row => [...row]);
+        this.selected = null;
+        this.mistakes = 0;
+        this.startTime = Date.now();
+      }
+      // Backtracking solver
+      solve(grid) {
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            if (grid[r][c] === 0) {
+              for (let n = 1; n <= 9; n++) {
+                if (this.isValid(grid, r, c, n)) {
+                  grid[r][c] = n;
+                  if (this.solve(grid)) return grid;
+                  grid[r][c] = 0;
+                }
+              }
+              return null;
+            }
+          }
+        }
+        return grid;
+      }
+      isValid(grid, r, c, n) {
+        for (let i = 0; i < 9; i++) {
+          if (grid[r][i] === n) return false;
+          if (grid[i][c] === n) return false;
+        }
+        const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
+        for (let i = br; i < br+3; i++)
+          for (let j = bc; j < bc+3; j++)
+            if (grid[i][j] === n) return false;
+        return true;
+      }
+      selectCell(r, c) {
+        if (this.puzzle[r][c] !== 0) return;
+        this.selected = [r, c];
+        this.render();
+      }
+      inputNumber(n) {
+        if (!this.selected) return;
+        const [r, c] = this.selected;
+        if (this.solution[r][c] !== n) {
+          this.mistakes++;
+          this.render();
+          return false;
+        }
+        this.current[r][c] = n;
+        this.selected = null;
+        this.render();
+        return true;
+      }
+      isComplete() {
+        for (let r = 0; r < 9; r++)
+          for (let c = 0; c < 9; c++)
+            if (this.current[r][c] === 0) return false;
+        return true;
+      }
+      render() {
+        const c = document.getElementById('gameContent');
+        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const ss = String(elapsed % 60).padStart(2, '0');
+        let html = `
+          <div class="flex justify-between items-center mb-3 px-1">
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">时间</div>
+              <div class="text-[18px] font-bold ink">${mm}:${ss}</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">错误</div>
+              <div class="text-[18px] font-bold text-red-500">${this.mistakes}</div>
+            </div>
+            <button onclick="sudoku=new SudokuGame();sudoku.render()" class="px-4 py-2 rounded-xl bg-ink text-white text-[13px] font-semibold">新局</button>
+          </div>
+          <div class="grid grid-cols-9 gap-0 bg-ink/80 p-1.5 rounded-2xl">
+        `;
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            const v = this.current[r][c];
+            const orig = this.puzzle[r][c];
+            const sel = this.selected && this.selected[0] === r && this.selected[1] === c;
+            const border = (c === 2 || c === 5) ? 'border-r-2 border-r-ink/80' : (c === 8 ? '' : 'border-r border-r-ink/20');
+            const borderB = (r === 2 || r === 5) ? 'border-b-2 border-b-ink/80' : (r === 8 ? '' : 'border-b border-b-ink/20');
+            const bg = sel ? 'bg-amber-200' : (orig !== 0 ? 'bg-white/60' : 'bg-white');
+            html += `<button onclick="sudoku.selectCell(${r},${c})" class="aspect-square ${bg} ${border} ${borderB} text-[15px] font-bold flex items-center justify-center" style="min-height: 30px;">${v || ''}</button>`;
+          }
+        }
+        html += `</div>`;
+        // Number pad
+        html += `<div class="grid grid-cols-9 gap-1.5 mt-3">`;
+        for (let n = 1; n <= 9; n++) {
+          html += `<button onclick="sudoku.inputNumber(${n})" class="aspect-square rounded-xl bg-white shadow font-bold text-ink text-[16px] active:scale-95">${n}</button>`;
+        }
+        html += `</div>`;
+        if (this.isComplete()) {
+          html += `<div class="mt-4 text-center bg-green-50 p-3 rounded-2xl"><p class="text-green-700 font-bold mb-1">🎉 完成了!</p><p class="text-[12px] text-gray-600">用时 ${mm}:${ss} · 错误 ${this.mistakes} 次</p></div>`;
+        }
+        c.innerHTML = html;
+      }
+    }
+
+    // ---------------- 贪吃蛇 ----------------
+    let snake = null;
+    function renderSnake() {
+      if (!snake) snake = new SnakeGame();
+      snake.start();
+      snake.render();
+    }
+    function snakeStop() {
+      if (snake) snake.stop();
+    }
+    class SnakeGame {
+      constructor() {
+        this.cols = 14;
+        this.rows = 20;
+        this.snake = [{x:7, y:10}];
+        this.dir = {x:0, y:1};
+        this.nextDir = {x:0, y:1};
+        this.food = this.spawn();
+        this.score = 0;
+        this.best = parseInt(localStorage.getItem('todo_snake_best') || '0');
+        this.alive = true;
+        this.timer = null;
+        this.speed = 180;
+      }
+      spawn() {
+        let p;
+        do {
+          p = {x: Math.floor(Math.random()*this.cols), y: Math.floor(Math.random()*this.rows)};
+        } while (this.snake.some(s => s.x === p.x && s.y === p.y));
+        return p;
+      }
+      start() {
+        if (this.timer) clearInterval(this.timer);
+        this.timer = setInterval(() => this.tick(), this.speed);
+      }
+      stop() {
+        if (this.timer) { clearInterval(this.timer); this.timer = null; }
+      }
+      setDir(dx, dy) {
+        // Prevent reversing
+        if (this.snake.length > 1 && (dx === -this.dir.x && dy === -this.dir.y)) return;
+        this.nextDir = {x: dx, y: dy};
+      }
+      tick() {
+        if (!this.alive) return;
+        this.dir = this.nextDir;
+        const head = {x: this.snake[0].x + this.dir.x, y: this.snake[0].y + this.dir.y};
+        if (head.x < 0 || head.x >= this.cols || head.y < 0 || head.y >= this.rows) {
+          this.die(); return;
+        }
+        if (this.snake.some(s => s.x === head.x && s.y === head.y)) {
+          this.die(); return;
+        }
+        this.snake.unshift(head);
+        if (head.x === this.food.x && head.y === this.food.y) {
+          this.score++;
+          if (this.score > this.best) {
+            this.best = this.score;
+            localStorage.setItem('todo_snake_best', String(this.best));
+          }
+          this.food = this.spawn();
+          if (this.score % 5 === 0 && this.speed > 80) {
+            this.speed -= 10;
+            this.stop();
+            this.start();
+          }
+        } else {
+          this.snake.pop();
+        }
+        this.render();
+      }
+      die() {
+        this.alive = false;
+        this.stop();
+        this.render();
+      }
+      reset() {
+        this.snake = [{x:7, y:10}];
+        this.dir = {x:0, y:1};
+        this.nextDir = {x:0, y:1};
+        this.food = this.spawn();
+        this.score = 0;
+        this.speed = 180;
+        this.alive = true;
+        this.start();
+        this.render();
+      }
+      render() {
+        const c = document.getElementById('gameContent');
+        let grid = '';
+        for (let y = 0; y < this.rows; y++) {
+          for (let x = 0; x < this.cols; x++) {
+            const isHead = this.snake[0].x === x && this.snake[0].y === y;
+            const isBody = this.snake.some((s, i) => i > 0 && s.x === x && s.y === y);
+            const isFood = this.food.x === x && this.food.y === y;
+            let cls = 'aspect-square';
+            if (isHead) cls += ' bg-gradient-to-br from-orange-500 to-red-500 rounded-md';
+            else if (isBody) cls += ' bg-orange-400 rounded-sm';
+            else if (isFood) cls += ' bg-red-500 rounded-full animate-pulse';
+            else cls += ' bg-white/30';
+            grid += `<div class="${cls}"></div>`;
+          }
+        }
+        c.innerHTML = `
+          <div class="flex justify-between items-center mb-3 px-1">
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">分数</div>
+              <div class="text-[20px] font-bold ink">${this.score}</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">最高</div>
+              <div class="text-[20px] font-bold text-amber-600">${this.best}</div>
+            </div>
+            <button onclick="snake.reset()" class="px-4 py-2 rounded-xl bg-ink text-white text-[13px] font-semibold">新局</button>
+          </div>
+          <div class="grid grid-cols-14 gap-0.5 bg-amber-900/10 p-1.5 rounded-2xl" style="grid-template-columns: repeat(${this.cols}, minmax(0, 1fr));">
+            ${grid}
+          </div>
+          ${!this.alive ? '<div class="mt-3 text-center"><p class="text-red-500 text-[16px] font-bold mb-2">💀 你挂了</p><button onclick="snake.reset()" class="px-5 py-2.5 rounded-xl bg-ink text-white text-[13px] font-semibold">再来一局</button></div>' : ''}
+          <div class="mt-4">
+            <p class="text-[11px] text-gray-500 text-center mb-2">滑动屏幕控制方向</p>
+            <div class="grid grid-cols-3 gap-1.5 max-w-[180px] mx-auto">
+              <div></div>
+              <button onclick="snake.setDir(0,-1)" class="aspect-square rounded-xl bg-white/80 shadow font-bold text-[20px]">↑</button>
+              <div></div>
+              <button onclick="snake.setDir(-1,0)" class="aspect-square rounded-xl bg-white/80 shadow font-bold text-[20px]">←</button>
+              <button onclick="snake.setDir(0,1)" class="aspect-square rounded-xl bg-white/80 shadow font-bold text-[20px]">↓</button>
+              <button onclick="snake.setDir(1,0)" class="aspect-square rounded-xl bg-white/80 shadow font-bold text-[20px]">→</button>
+            </div>
+          </div>
+        `;
+        this.attachSwipe();
+      }
+      attachSwipe() {
+        const c = document.getElementById('gameContent');
+        if (c.dataset.snakeSwipe) return;
+        c.dataset.snakeSwipe = '1';
+        let sx, sy;
+        c.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive: true});
+        c.addEventListener('touchend', e => {
+          const dx = e.changedTouches[0].clientX - sx;
+          const dy = e.changedTouches[0].clientY - sy;
+          if (Math.abs(dx) < 15 && Math.abs(dy) < 15) return;
+          if (Math.abs(dx) > Math.abs(dy)) this.setDir(dx > 0 ? 1 : -1, 0);
+          else this.setDir(0, dy > 0 ? 1 : -1);
+        });
+        document.addEventListener('keydown', this.keyHandler = e => {
+          if (e.key === 'ArrowLeft') this.setDir(-1, 0);
+          else if (e.key === 'ArrowRight') this.setDir(1, 0);
+          else if (e.key === 'ArrowUp') this.setDir(0, -1);
+          else if (e.key === 'ArrowDown') this.setDir(0, 1);
+        });
+      }
     }
 
     function goHome() { window.location.href = 'home.html'; }
