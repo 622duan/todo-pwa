@@ -438,16 +438,16 @@
         const c = this.columns[col];
         return c.length ? c[c.length - 1] : null;
       }
-      // How many cards from top are a movable sequence (descending alternating colors)
-      // With column-reverse, c[length-1] is the TOP of the display (the card the user picks up first)
-      // The movable sequence extends DOWNWARD from there
+      // How many cards from the BOTTOM are a movable sequence (descending alternating colors)
+      // Layout: flex-col, so c[length-1] is at the BOTTOM of the display (the selectable card the user picks up)
+      // The movable sequence extends UPWARD from c[length-1] toward c[0]
+      // For a valid sequence, c[i+1] (BELOW in display) must be 1 LARGER than c[i] (ABOVE in display)
       movableCount(col) {
         const c = this.columns[col];
         if (!c.length) return 0;
         let n = 1;
         for (let i = c.length - 2; i >= 0; i--) {
-          // c[i+1] is above c[i] in display (with column-reverse)
-          // Valid if c[i+1] is 1 LARGER than c[i] (descending sequence top→bottom)
+          // c[i+1] is below c[i] in display; valid if c[i+1] is 1 larger (K below, Q above, etc.)
           if (c[i+1].rank === c[i].rank + 1 && c[i+1].color !== c[i].color) n++;
           else break;
         }
@@ -488,9 +488,9 @@
       checkComplete(col) {
         const c = this.columns[col];
         if (c.length < 13) return;
-        // With column-reverse, last 13 cards are the TOP 13 in display
-        // K-to-A from top to bottom: K(13), Q(12), ..., A(1)
-        // So last[0] = A = 1, last[1] = 2, ..., last[12] = K = 13
+        // With flex-col, last 13 cards in array are the BOTTOM 13 in display
+        // K-to-A from top to bottom of display: A(1) at top, ..., K(13) at bottom
+        // So last[0] = c[length-13] = A = 1, last[1] = 2, ..., last[12] = c[length-1] = K = 13
         const last = c.slice(-13);
         for (let i = 0; i < 13; i++) {
           if (last[i].rank !== i + 1) return;
@@ -539,7 +539,7 @@
           const sel = this.selected && this.selected.src === col;
           const selCount = sel ? this.selected.count : 0;
           const movCnt = this.movableCount(col);
-          html += `<div class="flex flex-col-reverse">`;
+          html += `<div class="flex flex-col">`;
           // Empty column placeholder
           if (cArr.length === 0) {
             html += `<button onclick="spider.selectOrMove(${col})" class="w-full h-16 rounded-lg border-2 border-dashed border-gray-300 bg-white/30"></button>`;
@@ -551,9 +551,11 @@
               const isMovable = !sel && fromBottom <= movCnt;
               const textColor = card.color === 'r' ? 'text-red-600' : 'text-gray-900';
               const bg = isInSel ? 'bg-amber-200 ring-2 ring-amber-500' : isMovable ? 'bg-white ring-1 ring-amber-300/50' : 'bg-white';
-              const mb = i < cArr.length - 1 ? '-mb-6' : '';
+              // Apply -mb-6 to all cards (including the last one) so the bottom card (selectable) is visually attached, no 24px gap above
+              const mb = '-mb-6';
               const clickHandler = i === cArr.length - 1 ? `onclick="spider.selectOrMove(${col})"` : '';
-              html += `<div ${clickHandler} class="w-full h-12 ${mb} ${bg} ${textColor} rounded-md border border-gray-300 shadow-sm flex items-center justify-between px-1.5 text-[11px] font-bold cursor-pointer">`;
+              // items-end + pb-0.5 keeps rank/suit at the BOTTOM of each card so the BOTTOM card (selectable) shows its label clearly even when its top 24px is covered by the card above
+              html += `<div ${clickHandler} class="w-full h-12 ${mb} ${bg} ${textColor} rounded-md border border-gray-300 shadow-sm flex items-end justify-between px-1.5 pb-0.5 text-[11px] font-bold cursor-pointer">`;
               html += `<span>${this.rankLabel(card.rank)}</span><span class="text-[14px]">${card.suit}</span>`;
               html += `</div>`;
             }
