@@ -438,18 +438,19 @@
         const c = this.columns[col];
         return c.length ? c[c.length - 1] : null;
       }
-      // How many cards from the BOTTOM are a movable sequence (descending alternating colors)
+      // How many cards from the BOTTOM are a movable sequence (descending SAME COLOR, since 2-suit)
       // Layout: flex-col, c[length-1] is at the BOTTOM of display = TOP of stack = the SMALLEST
       // User picks up from c[length-1] (BOTTOM of screen), movable sequence extends UPWARD
-      // For valid descending sequence: c[i] (ABOVE) is 1 LARGER than c[i+1] (BELOW)
-      // Example: 2-3 stacked (2 on top of 3) → c[length-2]=3, c[length-1]=2; check: 3 === 2+1 ✓
+      // For valid sequence: c[i] (ABOVE) is 1 LARGER than c[i+1] (BELOW) AND same color (= same suit in 2-suit)
+      // Example: 2♠-3♠ stacked → c[length-2]=3♠, c[length-1]=2♠; check: 3 === 2+1 ✓ and color 'b' === 'b' ✓
+      // Standard Spider rule: a run can only be moved as a unit if it's same-suit
       movableCount(col) {
         const c = this.columns[col];
         if (!c.length) return 0;
         let n = 1;
         for (let i = c.length - 2; i >= 0; i--) {
-          // c[i] is ABOVE c[i+1] in display; valid if c[i] is 1 larger (Q above, J below, etc.)
-          if (c[i].rank === c[i+1].rank + 1 && c[i].color !== c[i+1].color) n++;
+          // c[i] is ABOVE c[i+1] in display; valid if c[i] is 1 larger AND same color (same suit)
+          if (c[i].rank === c[i+1].rank + 1 && c[i].color === c[i+1].color) n++;
           else break;
         }
         return n;
@@ -495,9 +496,12 @@
         // c[0] = K (largest, TOP of display = BOTTOM of stack = first placed)
         // c[length-1] = A (smallest, BOTTOM of display = TOP of stack = last placed)
         // last[0] = c[length-13] = K = 13, last[1] = Q = 12, ..., last[12] = c[length-1] = A = 1
+        // Standard rule: K-to-A removal requires SAME SUIT (same color in 2-suit)
         const last = c.slice(-13);
+        const firstColor = last[0].color;
         for (let i = 0; i < 13; i++) {
           if (last[i].rank !== 13 - i) return;
+          if (last[i].color !== firstColor) return;  // All 13 must be same suit
         }
         this.columns[col] = c.slice(0, c.length - 13);
         this.completed++;
@@ -572,7 +576,7 @@
         } else if (this.isStuck()) {
           html += `<div class="mt-3 text-center"><p class="text-amber-600 text-[13px] font-semibold mb-2">卡住了，新开一局吧</p><button onclick="spider=new SpiderGame();spider.render()" class="px-4 py-2 rounded-xl bg-ink text-white text-[12px] font-semibold">新局</button></div>`;
         } else {
-          html += `<p class="text-[10px] text-gray-500 text-center mt-3">点最下面的牌选中 · 点另一列移动 · 红黑交替才能叠</p>`;
+          html += `<p class="text-[10px] text-gray-500 text-center mt-3">点最下面的牌选中 · 点另一列移动 · 同花色才能一起移</p>`;
         }
         container.innerHTML = html;
       }
