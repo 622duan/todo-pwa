@@ -439,16 +439,17 @@
         return c.length ? c[c.length - 1] : null;
       }
       // How many cards from the BOTTOM are a movable sequence (descending alternating colors)
-      // Layout: flex-col, so c[length-1] is at the BOTTOM of the display (the selectable card the user picks up)
-      // The movable sequence extends UPWARD from c[length-1] toward c[0]
-      // For a valid sequence, c[i+1] (BELOW in display) must be 1 LARGER than c[i] (ABOVE in display)
+      // Layout: flex-col, c[length-1] is at the BOTTOM of display = TOP of stack = the SMALLEST
+      // User picks up from c[length-1] (BOTTOM of screen), movable sequence extends UPWARD
+      // For valid descending sequence: c[i] (ABOVE) is 1 LARGER than c[i+1] (BELOW)
+      // Example: 2-3 stacked (2 on top of 3) → c[length-2]=3, c[length-1]=2; check: 3 === 2+1 ✓
       movableCount(col) {
         const c = this.columns[col];
         if (!c.length) return 0;
         let n = 1;
         for (let i = c.length - 2; i >= 0; i--) {
-          // c[i+1] is below c[i] in display; valid if c[i+1] is 1 larger (K below, Q above, etc.)
-          if (c[i+1].rank === c[i].rank + 1 && c[i+1].color !== c[i].color) n++;
+          // c[i] is ABOVE c[i+1] in display; valid if c[i] is 1 larger (Q above, J below, etc.)
+          if (c[i].rank === c[i+1].rank + 1 && c[i].color !== c[i+1].color) n++;
           else break;
         }
         return n;
@@ -456,9 +457,11 @@
       canPlace(src, count, dst) {
         if (src === dst) return false;
         if (this.columns[dst].length === 0) return true;
-        // The TOPMOST card of the moving sequence is placed first on the new column
-        // It must be 1 less than the old top of the new column
-        const first = this.columns[src][this.columns[src].length - 1];
+        // The BOTTOMMOST card of the moving sequence (in real life) is placed FIRST on the destination
+        // In user's mental model (BOTTOM of screen = TOP of stack), this is c[src][length-count]
+        // (the LARGEST in the moving = first card placed, not the smallest at c[length-1])
+        // Example: 2-3 moving to 4 → first=3 (BOTTOM in stack), t=4, check 4 === 3+1 ✓
+        const first = this.columns[src][this.columns[src].length - count];
         const t = this.columns[dst][this.columns[dst].length - 1];
         return t.rank === first.rank + 1;
       }
@@ -488,12 +491,13 @@
       checkComplete(col) {
         const c = this.columns[col];
         if (c.length < 13) return;
-        // With flex-col, last 13 cards in array are the BOTTOM 13 in display
-        // K-to-A from top to bottom of display: A(1) at top, ..., K(13) at bottom
-        // So last[0] = c[length-13] = A = 1, last[1] = 2, ..., last[12] = c[length-1] = K = 13
+        // In user's mental model (BOTTOM of screen = TOP of stack = SMALLEST):
+        // c[0] = K (largest, TOP of display = BOTTOM of stack = first placed)
+        // c[length-1] = A (smallest, BOTTOM of display = TOP of stack = last placed)
+        // last[0] = c[length-13] = K = 13, last[1] = Q = 12, ..., last[12] = c[length-1] = A = 1
         const last = c.slice(-13);
         for (let i = 0; i < 13; i++) {
-          if (last[i].rank !== i + 1) return;
+          if (last[i].rank !== 13 - i) return;
         }
         this.columns[col] = c.slice(0, c.length - 13);
         this.completed++;
