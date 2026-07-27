@@ -331,7 +331,12 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
+        navigator.serviceWorker.register('sw.js').then((reg) => {
+          // Check for SW update every time PWA opens (cron push makes new sw.js or content)
+          reg.update().catch(() => {});
+          // Also re-check every 30 minutes while PWA is open (e.g. user leaves it open all day)
+          setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+        }).catch(() => {});
       });
     }
   </script>

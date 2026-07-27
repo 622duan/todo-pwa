@@ -58,6 +58,31 @@
       </div>
     </section>
 
+    <!-- Version check -->
+    <section>
+      <p class="text-[11px] text-gray-500 uppercase tracking-widest font-semibold mb-2.5 px-1">版本</p>
+      <div class="glass rounded-[20px] p-4 space-y-2.5">
+        <div class="flex items-center justify-between p-2">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400/20 to-blue-400/5 flex items-center justify-center">
+              <i class="fas fa-circle-info text-blue-500 text-sm"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-[14px]">当前版本</p>
+              <p class="text-[11px] text-gray-500 mt-0.5" id="versionInfo">检测中…</p>
+            </div>
+          </div>
+        </div>
+        <button onclick="checkUpdate()" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/40">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-arrows-rotate text-blue-500 w-5 text-center"></i>
+            <span class="text-[14px] font-medium">检查更新</span>
+          </div>
+          <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
+        </button>
+      </div>
+    </section>
+
     <!-- Danger zone -->
     <section>
       <p class="text-[11px] text-gray-500 uppercase tracking-widest font-semibold mb-2.5 px-1">危险操作</p>

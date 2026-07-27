@@ -70,7 +70,9 @@
         <span class="pulse-dot"></span>
         每日行业雷达
       </h2>
-      <div class="w-9 h-9"></div>
+      <button onclick="downloadBrief()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center active:bg-white/90" title="下载今日日报 .md">
+        <i class="fas fa-download text-sm text-brand"></i>
+      </button>
     </div>
     <p class="text-[11px] text-gray-500 text-center mt-1" id="briefDate">每日行业雷达 · 2026-07-27（星期一） · 编制 Mavis</p>
   </div>
@@ -620,6 +622,26 @@
 
     function goHome() { window.location.href = 'home.html'; }
     function goPage(p) { window.location.href = p; }
+
+    function downloadBrief() {
+      try {
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+        const filename = `daily-brief-${dateStr}.md`;
+        // Add BOM for proper UTF-8 in Notepad / some markdown editors
+        const blob = new Blob(['\uFEFF' + DEFAULT_BRIEF], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (e) {
+        alert('下载失败：' + e.message);
+      }
+    }
 
     init();
   </script>
