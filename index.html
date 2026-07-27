@@ -133,7 +133,7 @@
           <button class="page-grid-btn" onclick="go('pages/jp.html')"><i class="fas fa-language"></i>单词JP</button>
           <button class="page-grid-btn" onclick="go('pages/en.html')"><i class="fas fa-book"></i>单词EN</button>
           <button class="page-grid-btn" onclick="go('pages/cartoon.html')"><i class="fas fa-couch"></i>摸鱼办</button>
-          <button class="page-grid-btn" onclick="go('pages/home.html')"><i class="fas fa-arrow-rotate-right"></i>刷新</button>
+          <button class="page-grid-btn" onclick="reloadFrame()"><i class="fas fa-arrow-rotate-right"></i>刷新</button>
         </div>
       </div>
     </div>
@@ -254,6 +254,19 @@
     function toggleMenu() { document.getElementById('menu').classList.toggle('show'); }
     function closeMenu() { document.getElementById('menu').classList.remove('show'); }
     function go(path) { document.getElementById('mobileFrame').src = path; closeMenu(); }
+
+    function reloadFrame() {
+      const f = document.getElementById('mobileFrame');
+      // Force reload: append ?t=timestamp to bypass cache
+      const u = new URL(f.src, location.href);
+      u.searchParams.set('_t', Date.now());
+      f.src = u.toString();
+      // Also tell SW to check for updates
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.update()));
+      }
+      closeMenu();
+    }
 
     // Draggable FAB
     (function() {
