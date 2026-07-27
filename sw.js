@@ -1,5 +1,5 @@
 // todo · Service Worker
-const CACHE_NAME = 'todo-v7-brief-0727-offline';
+const CACHE_NAME = 'todo-v7-ptr-refresh';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './pages/add-task.html',
   './pages/all-tasks.html',
   './pages/settings.html',
+  './pages/refresh.js',
 ];
 // Note: brief.html is intentionally NOT in ASSETS so the SW always fetches the latest version from the network.
 
