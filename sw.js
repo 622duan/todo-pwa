@@ -1,5 +1,5 @@
 // todo · Service Worker
-const CACHE_NAME = 'todo-v7-brief-0727';
+const CACHE_NAME = 'todo-v7-brief-0727-dl';
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,6 @@ const ASSETS = [
   './icon-512.png',
   './apple-touch-icon.png',
   './pages/home.html',
-  './pages/brief.html',
   './pages/jp.html',
   './pages/en.html',
   './pages/cartoon.html',
@@ -16,6 +15,7 @@ const ASSETS = [
   './pages/all-tasks.html',
   './pages/settings.html',
 ];
+// Note: brief.html is intentionally NOT in ASSETS so the SW always fetches the latest version from the network.
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -39,6 +39,17 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== location.origin) return;
 
   const isHTML = event.request.mode === 'navigate' || event.request.destination === 'document';
+  const isBrief = url.pathname.endsWith('/pages/brief.html') || url.pathname.endsWith('brief.html');
+
+  if (isBrief) {
+    // brief.html: always network, never cache. Cron pushes new content daily.
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => response)
+        .catch(() => new Response('<h1>网络错误</h1><p>请检查网络后重试</p>', { headers: { 'Content-Type': 'text/html' } }))
+    );
+    return;
+  }
 
   if (isHTML) {
     // Network-first for HTML so cron updates show up; fall back to cache when offline
