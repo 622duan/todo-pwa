@@ -1,5 +1,5 @@
 // todo · Service Worker
-const CACHE_NAME = 'todo-v7-brief-0727-dl';
+const CACHE_NAME = 'todo-v7-brief-0727-offline';
 const ASSETS = [
   './',
   './index.html',
@@ -42,11 +42,24 @@ self.addEventListener('fetch', (event) => {
   const isBrief = url.pathname.endsWith('/pages/brief.html') || url.pathname.endsWith('brief.html');
 
   if (isBrief) {
-    // brief.html: always network, never cache. Cron pushes new content daily.
+    // brief.html: stale-while-revalidate. Always try network first to get cron-pushed new content.
+    // On network failure, fall back to last cached version so user can still read yesterday's brief offline.
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
-        .then((response) => response)
-        .catch(() => new Response('<h1>网络错误</h1><p>请检查网络后重试</p>', { headers: { 'Content-Type': 'text/html' } }))
+      caches.open(CACHE_NAME).then((cache) =>
+        fetch(event.request, { cache: 'no-store' })
+          .then((response) => {
+            if (response && response.status === 200) {
+              cache.put(event.request, response.clone());
+            }
+            return response;
+          })
+          .catch(() => cache.match(event.request).then((cached) =>
+            cached || new Response(
+              '<div style="font-family:-apple-system,sans-serif;padding:40px 20px;text-align:center;color:#64748B;"><h2 style="color:#0F172A;margin:0 0 8px;">网络连接失败</h2><p style="margin:0;font-size:13px;">请检查网络后重试</p></div>',
+              { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+            )
+          ))
+      )
     );
     return;
   }
