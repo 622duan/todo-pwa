@@ -1,5 +1,5 @@
 // todo · Service Worker
-const CACHE_NAME = 'todo-v7-spider-v5';
+const CACHE_NAME = 'todo-v7-brief-0727';
 const ASSETS = [
   './',
   './index.html',
