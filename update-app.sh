@@ -93,7 +93,9 @@ EOF
   chmod 600 "$SSH_CONFIG"
 fi
 
-# 5. 配置 git remote
+# 5. 配置 git 身份 + remote
+git config user.email "Mavis@MiniMax.local" 2>/dev/null || true
+git config user.name "Mavis" 2>/dev/null || true
 git remote remove origin 2>/dev/null || true
 git remote add origin "$GIT_REMOTE" 2>/dev/null || true
 git remote set-url origin "$GIT_REMOTE"
