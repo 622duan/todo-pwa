@@ -130,6 +130,8 @@
         <div class="w-10 h-1 rounded-full bg-gray-300 mx-auto mb-3"></div>
         <p class="text-[11px] text-gray-500 uppercase tracking-widest font-semibold mb-3">mini 玩法</p>
         <div class="grid grid-cols-2 gap-2.5">
+          <button class="page-grid-btn" onclick="go('pages/news.html')"><i class="fas fa-globe"></i>政经科技</button>
+          <button class="page-grid-btn" onclick="go('pages/brief.html')"><i class="fas fa-newspaper"></i>行业雷达</button>
           <button class="page-grid-btn" onclick="go('pages/jp.html')"><i class="fas fa-language"></i>单词JP</button>
           <button class="page-grid-btn" onclick="go('pages/en.html')"><i class="fas fa-book"></i>单词EN</button>
           <button class="page-grid-btn" onclick="go('pages/cartoon.html')"><i class="fas fa-couch"></i>摸鱼办</button>
@@ -165,20 +167,24 @@
             <span class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center text-xs">01</span>
             <span class="text-sm">今日</span>
           </button>
-          <button data-page="pages/brief.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
+          <button data-page="pages/news.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
             <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">02</span>
-            <span class="text-sm">每日日报</span>
+            <span class="text-sm">政经科技</span>
+          </button>
+          <button data-page="pages/brief.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">03</span>
+            <span class="text-sm">行业雷达</span>
           </button>
           <button data-page="pages/add-task.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
-            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">03</span>
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">04</span>
             <span class="text-sm">添加任务</span>
           </button>
           <button data-page="pages/all-tasks.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
-            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">04</span>
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">05</span>
             <span class="text-sm">全部任务</span>
           </button>
           <button data-page="pages/settings.html" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left">
-            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">05</span>
+            <span class="nav-icon w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs">06</span>
             <span class="text-sm">设置</span>
           </button>
         </nav>
