@@ -1,6 +1,6 @@
 // todo · Service Worker
-// v8: force-clear all old caches (v7 + earlier). news.html now treated like brief.html: stale-while-revalidate with no-store.
-const CACHE_NAME = 'todo-v8-news-20260902';
+// v9: merged news.html into brief.html. Removed news.html route.
+const CACHE_NAME = 'todo-v9-merged-brief-20260902';
 const ASSETS = [
   './',
   './index.html',
@@ -42,9 +42,8 @@ self.addEventListener('fetch', (event) => {
 
   const isHTML = event.request.mode === 'navigate' || event.request.destination === 'document';
   const isBrief = url.pathname.endsWith('/pages/brief.html') || url.pathname.endsWith('brief.html');
-  const isNews = url.pathname.endsWith('/pages/news.html') || url.pathname.endsWith('news.html');
 
-  if (isBrief || isNews) {
+  if (isBrief) {
     // brief.html + news.html: stale-while-revalidate. Always try network first (no-store) to get cron-pushed new content.
     // On network failure, fall back to last cached version so user can still read yesterday's brief offline.
     event.respondWith(
