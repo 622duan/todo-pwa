@@ -9,7 +9,7 @@ PROTOTYPE="$WORKSPACE/prototype"
 BRIEF_HTML="$PROTOTYPE/pages/brief.html"
 SSH_KEY="/workspace/.ssh/mavis_github"
 SSH_CONFIG="/workspace/.ssh/config"
-GIT_REMOTE="git@github.com:622duan/todo-pwa.git"
+GIT_REMOTE="https://x-access-token:${GITHUB_PAT_FOR_JITYJ}@github.com/622duan/todo-pwa.git"
 PAGES_URL="https://622duan.github.io/todo-pwa/"
 
 # 1. 确定要嵌入的日报
@@ -66,22 +66,28 @@ print("✓ 已嵌入 " + str(len(brief_content)) + " 字符")
 print("✓ 已更新 header 日期")
 PYEOF
 
-# 4. 确保 SSH 配置
-mkdir -p /root/.ssh
-chmod 700 /root/.ssh
-# 优先使用 workspace 里的密钥（防止 sandbox 重置丢失）
-if [ -f "/workspace/.ssh/mavis_github" ]; then
-  cp /workspace/.ssh/mavis_github /root/.ssh/mavis_github 2>/dev/null
-  cp /workspace/.ssh/config /root/.ssh/config 2>/dev/null
-  chmod 600 /root/.ssh/mavis_github /root/.ssh/config 2>/dev/null
-fi
-if [ ! -f "$SSH_KEY" ]; then
-  echo "❌ SSH 私钥丢失: $SSH_KEY"
-  echo "   需要重新生成并添加到 GitHub Deploy Keys"
-  exit 1
-fi
-if [ ! -f "$SSH_CONFIG" ] || ! grep -q "mavis_github" "$SSH_CONFIG" 2>/dev/null; then
-  cat > "$SSH_CONFIG" << 'EOF'
+# 4. 选择推送方式: PAT 优先 (env 里有 GITHUB_PAT_FOR_JITYJ), 否则 SSH
+if [ -n "${GITHUB_PAT_FOR_JITYJ:-}" ]; then
+  echo "🔑 使用 HTTPS+PAT 推送 (mavis secret 注入)"
+  GIT_REMOTE="https://x-access-token:${GITHUB_PAT_FOR_JITYJ}@github.com/622duan/todo-pwa.git"
+  git config http.sslVerify false
+else
+  echo "🔑 回退到 SSH 推送"
+  mkdir -p /root/.ssh
+  chmod 700 /root/.ssh
+  # 优先使用 workspace 里的密钥（防止 sandbox 重置丢失）
+  if [ -f "/workspace/.ssh/mavis_github" ]; then
+    cp /workspace/.ssh/mavis_github /root/.ssh/mavis_github 2>/dev/null
+    cp /workspace/.ssh/config /root/.ssh/config 2>/dev/null
+    chmod 600 /root/.ssh/mavis_github /root/.ssh/config 2>/dev/null
+  fi
+  if [ ! -f "$SSH_KEY" ]; then
+    echo "❌ SSH 私钥丢失: $SSH_KEY"
+    echo "   需要重新生成并添加到 GitHub Deploy Keys"
+    exit 1
+  fi
+  if [ ! -f "$SSH_CONFIG" ] || ! grep -q "mavis_github" "$SSH_CONFIG" 2>/dev/null; then
+    cat > "$SSH_CONFIG" << 'EOF'
 Host github.com
   HostName github.com
   User git
@@ -90,7 +96,9 @@ Host github.com
   StrictHostKeyChecking no
   UserKnownHostsFile=/dev/null
 EOF
-  chmod 600 "$SSH_CONFIG"
+    chmod 600 "$SSH_CONFIG"
+  fi
+  GIT_REMOTE="git@github.com:622duan/todo-pwa.git"
 fi
 
 # 5. 配置 git 身份 + remote
