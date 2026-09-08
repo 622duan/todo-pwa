@@ -11,7 +11,7 @@ set -e
 
 WORKSPACE="/workspace"
 PROTOTYPE="$WORKSPACE/prototype"
-NEWS_HTML="$PROTOTYPE/pages/news.html"
+NEWS_HTML="$PROTOTYPE/pages/political-news.html"
 PAGES_URL="https://622duan.github.io/todo-pwa/"
 
 # ============================================
