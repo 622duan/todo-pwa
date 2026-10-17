@@ -7,11 +7,17 @@
 #   1. 优先 SSH：如果 GITHUB_SSH_KEY_FOR_TODO_PWA 在 env 且 SSH 出口通，走 git@github.com
 #   2. 兜底 HTTPS+PAT：用 GITHUB_PAT_FOR_JITYJ（mavis env 注入）
 #   3. 硬编码兜底：都没有就用 script 里的 token（最后保险，⚠️ 不推荐长期使用）
+#
+# v2 改造（2026-10-17）：PWA 实际展示页改为 brief.html
+#   - 旧流程：pages/political-news.html + DEFAULT_NEWS + newsDate
+#   - 新流程：pages/brief.html + DEFAULT_BRIEF + briefDate
 set -e
 
 WORKSPACE="/workspace"
 PROTOTYPE="$WORKSPACE/prototype"
-NEWS_HTML="$PROTOTYPE/pages/political-news.html"
+NEWS_HTML="$PROTOTYPE/pages/brief.html"
+DEFAULT_VAR="DEFAULT_BRIEF"
+DATE_ID="briefDate"
 PAGES_URL="https://622duan.github.io/todo-pwa/"
 
 # ============================================
@@ -56,18 +62,19 @@ news_escaped = news_content.replace('\\\\', '\\\\\\\\')
 news_escaped = news_escaped.replace('\`', '\\\\\`')
 news_escaped = news_escaped.replace('\${', '\\\\\${')
 
-# 替换 DEFAULT_NEWS
-pattern = r"const DEFAULT_NEWS = \`[\s\S]*?\`;\s*\n\s*// Init"
-replacement = "const DEFAULT_NEWS = \`" + news_escaped + "\`;\n\n    // Init"
+# 替换 DEFAULT_BRIEF（v2 流程：brief.html + DEFAULT_BRIEF + briefDate）
+default_var = "DEFAULT_BRIEF"
+pattern = r"const " + default_var + r" = \`[\s\S]*?\`;\s*\n\s*// Init"
+replacement = "const " + default_var + " = \`" + news_escaped + "\`;\n\n    // Init"
 new_html, n = re.subn(pattern, replacement, html, count=1)
 if n != 1:
-    print("❌ 替换失败，找不到 DEFAULT_NEWS 块")
+    print("❌ 替换失败，找不到 " + default_var + " 块")
     exit(1)
 
 # 同步更新 header 日期
 new_html = re.sub(
-    r'<p class="text-\[11px\] text-gray-500 text-center mt-1" id="newsDate">[^<]*</p>',
-    '<p class="text-[11px] text-gray-500 text-center mt-1" id="newsDate">' + title + ' · 编制 Mavis</p>',
+    r'<p class="text-\[11px\] text-gray-500 text-center mt-1" id="briefDate">[^<]*</p>',
+    '<p class="text-[11px] text-gray-500 text-center mt-1" id="briefDate">' + title + ' · 编制 Mavis</p>',
     new_html
 )
 
