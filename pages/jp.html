@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>每日日语 · todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: linear-gradient(180deg, #FAF7F2 0%, #F4F1EA 100%); min-height: 100vh; -webkit-font-smoothing: antialiased; color: #0F172A; overflow-x: hidden; }
+    .glass { background: rgba(255,255,255,0.65); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255,255,255,0.7); }
+    .ink { color: #0F172A; }
+    .bg-ink { background: #0F172A; }
+    .brand { color: #84A98C; }
+    .bg-brand { background: #84A98C; }
+    .accent { color: #E76F51; }
+    .bg-accent { background: #E76F51; }
+    .scroll-area { height: calc(100vh - 80px); overflow-y: auto; padding: 0 20px 20px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .word-hero { font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif; line-height: 1.1; }
+    .kanji-display { font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'STSong', serif; }
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #E76F51; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    .tab-btn.active { color: #0F172A; }
+    .tab-btn.active i { transform: scale(1.1); }
+    .tab-btn i { transition: transform 0.2s; }
+    .tab-btn { color: #94a3b8; transition: color 0.2s; }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .divider-line { background: linear-gradient(90deg, transparent, rgba(15,23,42,0.15), transparent); height: 1px; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#84A98C', accent: '#E76F51' } } } }
+  </script>
+<script src="refresh.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <div class="px-5 pt-3 pb-3">
+    <div class="flex items-center justify-between mb-1">
+      <button onclick="goHome()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center">
+        <i class="fas fa-chevron-left text-sm"></i>
+      </button>
+      <h2 class="text-[15px] font-semibold flex items-center gap-1.5">
+        <span class="pulse-dot"></span>
+        每日日语
+      </h2>
+      <div class="w-9 h-9"></div>
+    </div>
+    <p class="text-[11px] text-gray-500 text-center mt-1" id="dateLabel">N5 · 每天一词</p>
+  </div>
+
+  <!-- Content -->
+  <div class="scroll-area">
+    <div id="wordCard" class="fade-in">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Tip card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <p class="text-[12px] text-gray-600 leading-relaxed">
+        <i class="fas fa-lightbulb text-amber-500 mr-1.5"></i>
+        <strong>小贴士</strong>：50 天一轮回，50 个 N5 高频词。每天 1 个，一个月后能跟日本朋友打招呼、点菜、问路了。
+      </p>
+    </div>
+
+    <!-- Streak card -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-[11px] text-gray-500">今日进度</p>
+          <p class="text-[15px] font-semibold mt-0.5" id="progressText">第 1 / 50 词</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[11px] text-gray-500">明日</p>
+          <p class="text-[13px] font-medium mt-0.5" id="nextWord">—</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full flex items-center justify-around py-2.5 px-2 shadow-lg" style="border-radius: 999px;">
+      <button onclick="goPage('home.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-house text-[15px]"></i><span class="text-[10px] font-medium">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-newspaper text-[15px]"></i><span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button onclick="goPage('all-tasks.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-list text-[15px]"></i><span class="text-[10px] font-medium">全部</span>
+      </button>
+      <button onclick="goPage('settings.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-gear text-[15px]"></i><span class="text-[10px] font-medium">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const WORDS = [
+      { k: "出張", h: "しゅっちょう", r: "shutchō", m: "出差", e_j: "来週、大阪へ出張します。", e_z: "下周去大阪出差。", t: "商务人士高频词" },
+      { k: "約束", h: "やくそく", r: "yakusoku", m: "约定；承诺", e_j: "友達と約束があります。", e_z: "和朋友有约。", t: "可作名/动，「約束を守る」遵守约定" },
+      { k: "成長", h: "せいちょう", r: "seichō", m: "成长；发展", e_j: "子供の成長を見るのが楽しい。", e_z: "看孩子成长很快乐。", t: "抽象名词，职场/教育场景常用" },
+      { k: "経験", h: "けいけん", r: "keiken", m: "经验；经历", e_j: "海外で仕事の経験があります。", e_z: "有海外工作经验。", t: "「経験談」经验谈" },
+      { k: "理由", h: "りゆう", r: "riyū", m: "理由；原因", e_j: "遅刻した理由を説明してください。", e_z: "请说明迟到的理由。", t: "和「原因」近义但更主观" },
+      { k: "予定", h: "よてい", r: "yotei", m: "预定；计划", e_j: "今日の予定は何ですか。", e_z: "今天的计划是什么？", t: "和「計画」不同，偏具体安排" },
+      { k: "雰囲気", h: "ふんいき", r: "fun'iki", m: "氛围；气氛", e_j: "このカフェは雰囲気がありますね。", e_z: "这家咖啡店氛围不错。", t: "难以翻译的日语独特词" },
+      { k: "夢", h: "ゆめ", r: "yume", m: "梦；梦想", e_j: "小さい頃の夢は何でしたか。", e_z: "小时候的梦想是什么？", t: "可指「睡梦」也可指「理想」" },
+      { k: "目標", h: "もくひょう", r: "mokuhyō", m: "目标；目的", e_j: "今年の目標を立てました。", e_z: "我设定了今年的目标。", t: "「目標達成」达成目标" },
+      { k: "努力", h: "どりょく", r: "doryoku", m: "努力", e_j: "努力すれば夢は叶う。", e_z: "只要努力梦想就会实现。", t: "N3 励志必备词" },
+      { k: "自信", h: "じしん", r: "jishin", m: "自信；确信", e_j: "彼ならできると自信があります。", e_z: "我相信他能做到。", t: "「自信を持つ」要有自信" },
+      { k: "印象", h: "いんしょう", r: "inshō", m: "印象", e_j: "第一印象が大事です。", e_z: "第一印象很重要。", t: "「印象に残る」留下印象" },
+      { k: "感じ", h: "かんじ", r: "kanji", m: "感觉；感受", e_j: "どう感じましたか。", e_z: "你感觉如何？", t: "汉字写法不同：「漢字」汉字" },
+      { k: "伝統", h: "でんとう", r: "dentō", m: "传统", e_j: "日本の伝統文化を守る。", e_z: "保护日本传统文化。", t: "「伝統的」传统的" },
+      { k: "文化", h: "ぶんか", r: "bunka", m: "文化", e_j: "日本文化に興味があります。", e_z: "对日本文化感兴趣。", t: "「文化交流」文化交流" },
+      { k: "技術", h: "ぎじゅつ", r: "gijutsu", m: "技术；工艺", e_j: "日本の技術は世界一です。", e_z: "日本的技术是世界第一。", t: "「IT技術」IT技术" },
+      { k: "研究", h: "けんきゅう", r: "kenkyū", m: "研究；钻研", e_j: "大学で AI を研究しています。", e_z: "在大学研究 AI。", t: "「研究者」研究者" },
+      { k: "情報", h: "じょうほう", r: "jōhō", m: "信息；情报", e_j: "詳しい情報はウェブサイトにあります。", e_z: "详细信息在官网上。", t: "「情報を集める」收集信息" },
+      { k: "連絡", h: "れんらく", r: "renraku", m: "联系；联络", e_j: "詳細はメールでご連絡します。", e_z: "详情会通过邮件联系。", t: "「連絡を取る」取得联系" },
+      { k: "紹介", h: "しょうかい", r: "shōkai", m: "介绍", e_j: "友達を紹介しましょう。", e_z: "我来介绍朋友给你认识。", t: "「自己紹介」自我介绍" },
+      { k: "説明", h: "せつめい", r: "setsumei", m: "说明；解释", e_j: "このグラフを説明してください。", e_z: "请说明这个图表。", t: "「説明する」动词形" },
+      { k: "意見", h: "いけん", r: "iken", m: "意见；想法", e_j: "あなたの意見を聞きたいです。", e_z: "想听听你的意见。", t: "「意見を交換する」交换意见" },
+      { k: "提案", h: "ていあん", r: "teian", m: "提案；建议", e_j: "新しい企画を提案します。", e_z: "我提议新的企划。", t: "职场高频动词名词" },
+      { k: "準備", h: "じゅんび", r: "junbi", m: "准备", e_j: "明日の会議の準備をします。", e_z: "准备明天的会议。", t: "「準備万端」准备万全" },
+      { k: "確か", h: "たしか", r: "tashika", m: "确实；可靠", e_j: "たしか彼が言ったはずです。", e_z: "应该是他说的。", t: "既可作形容动，也可作副词" },
+      { k: "当然", h: "とうぜん", r: "tōzen", m: "当然；理所当然", e_j: "約束を守れば当然の結果です。", e_z: "遵守约定是理所当然的结果。", t: "「当然ながら」理所当然地" },
+      { k: "意外", h: "いがい", r: "igai", m: "意外；没想到", e_j: "意外な結果になりました。", e_z: "结果出乎意料。", t: "「意外に」意外地" },
+      { k: "多分", h: "たぶん", r: "tabun", m: "大概；恐怕", e_j: "明日は多分晴れるでしょう。", e_z: "明天大概会放晴。", t: "比「きっと」不确定" },
+      { k: "絶対", h: "ぜったい", r: "zettai", m: "绝对；一定", e_j: "絶対に遅刻しません。", e_z: "绝对不会迟到。", t: "「絶対に」一定" },
+      { k: "結局", h: "けっきょく", r: "kekkyoku", m: "结果；最后", e_j: "結局どうなったの？", e_z: "结果怎么样了？", t: "表示事情最终结果" },
+      { k: "原因", h: "げんいん", r: "gen'in", m: "原因", e_j: "事故の原因を調査中です。", e_z: "事故原因正在调查中。", t: "「原因不明」原因不明" },
+      { k: "成功", h: "せいこう", r: "seikō", m: "成功", e_j: "プロジェクトは大成功でした。", e_z: "项目大获成功。", t: "「成功する」动词" },
+      { k: "失敗", h: "しっぱい", r: "shippai", m: "失败", e_j: "失敗から学ぶことが多いです。", e_z: "从失败中学到很多。", t: "「失敗は成功のもと」失败是成功之母" },
+      { k: "解決", h: "かいけつ", r: "kaiketsu", m: "解决", e_j: "問題を解決しましょう。", e_z: "我们一起解决问题吧。", t: "「解決策」解决方案" },
+      { k: "対応", h: "たいおう", r: "taiō", m: "应对；处理", e_j: "お客様に対応しています。", e_z: "正在应对客户。", t: "客服/职场高频词" },
+      { k: "影響", h: "えいきょう", r: "eikyō", m: "影响", e_j: "天候は作物に影響します。", e_z: "天气影响农作物。", t: "「影響を与える」带来影响" },
+      { k: "存在", h: "そんざい", r: "sonzai", m: "存在", e_j: "彼の存在は大きいです。", e_z: "他的存在很重要。", t: "「存在意義」存在意义" },
+      { k: "現実", h: "げんじつ", r: "genjitsu", m: "现实", e_j: "現実は厳しいです。", e_z: "现实很残酷。", t: "「現実逃避」逃避现实" },
+      { k: "夢中", h: "むちゅう", r: "muchū", m: "沉迷；专注", e_j: "ゲームに夢中です。", e_z: "沉迷于游戏。", t: "形容动，「夢中になる」着迷" },
+      { k: "我慢", h: "がまん", r: "gaman", m: "忍耐；忍受", e_j: "もう少し我慢してください。", e_z: "请再忍耐一下。", t: "日本文化代表词之一" },
+      { k: "遠慮", h: "えんりょ", r: "enryo", m: "客气；谦让", e_j: "どうぞ遠慮しないでください。", e_z: "请别客气。", t: "「遠慮なく」不客气地" },
+      { k: "尊敬", h: "そんけい", r: "sonkei", m: "尊敬", e_j: "彼をとても尊敬しています。", e_z: "我非常尊敬他。", t: "「尊敬語」尊敬语" },
+      { k: "感謝", h: "かんしゃ", r: "kansha", m: "感谢", e_j: "ご支援に感謝いたします。", e_z: "感谢您的支持。", t: "「感謝状」感谢信" },
+      { k: "応援", h: "おうえん", r: "ōen", m: "支持；声援", e_j: "チームを応援しています。", e_z: "我支持这支队伍。", t: "「応援団」啦啦队" },
+      { k: "心配", h: "しんぱい", r: "shinpai", m: "担心；挂念", e_j: "心配しないでください。", e_z: "请不要担心。", t: "「心配性」爱操心的性格" },
+      { k: "安心", h: "あんしん", r: "anshin", m: "安心；放心", e_j: "連絡があって安心しました。", e_z: "联系上了就放心了。", t: "「安心する」放心" },
+      { k: "緊張", h: "きんちょう", r: "kinchō", m: "紧张", e_j: "面接の前はいつも緊張します。", e_z: "面试前总是很紧张。", t: "「緊張感」紧张感" },
+      { k: "希望", h: "きぼう", r: "kibō", m: "希望；期望", e_j: "将来の希望はありますか。", e_z: "你对未来有希望吗？", t: "「希望者」报名者" },
+      { k: "性格", h: "せいかく", r: "seikaku", m: "性格", e_j: "彼女の性格は明るいです。", e_z: "她性格开朗。", t: "「性格診断」性格测试" },
+    ];;
+
+    function dayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / 86400000);
+    }
+
+    function render() {
+      const idx = dayOfYear() % WORDS.length;
+      const nextIdx = (idx + 1) % WORDS.length;
+      const w = WORDS[idx];
+      const next = WORDS[nextIdx];
+
+      document.getElementById('wordCard').innerHTML = `
+        <div class="glass rounded-[28px] p-6 text-center fade-in">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-4">Today's Word</p>
+          <div class="kanji-display text-[56px] font-bold ink leading-none mb-3">${w.k}</div>
+          <div class="word-hero text-[18px] text-gray-700 mb-1">${w.h}</div>
+          <div class="text-[14px] text-gray-500 italic mb-5">${w.r}</div>
+          <div class="divider-line my-4"></div>
+          <div class="text-[18px] font-semibold ink mb-4">${w.m}</div>
+          <div class="bg-white/40 rounded-2xl p-3.5 text-left">
+            <p class="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-1.5">例句 · Example</p>
+            <p class="word-hero text-[14px] text-ink leading-relaxed">${w.e_j}</p>
+            <p class="text-[12px] text-gray-500 mt-1">${w.e_z}</p>
+          </div>
+          <div class="mt-4 text-[12px] text-gray-500 leading-relaxed">
+            <i class="fas fa-lightbulb text-amber-500 mr-1"></i>${w.t}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('progressText').textContent = `第 ${idx + 1} / ${WORDS.length} 词`;
+      document.getElementById('nextWord').textContent = next.k;
+    }
+
+    function goHome() { window.location.href = 'home.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    render();
+  </script>
+</body>
+</html>

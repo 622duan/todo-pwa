@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>摸鱼办 · todo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: linear-gradient(180deg, #FFF5E1 0%, #FFE4B5 100%); min-height: 100vh; -webkit-font-smoothing: antialiased; color: #0F172A; overflow-x: hidden; }
+    .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255,255,255,0.7); }
+    .ink { color: #0F172A; }
+    .bg-ink { background: #0F172A; }
+    .brand { color: #F4A261; }
+    .bg-brand { background: #F4A261; }
+    .accent { color: #E76F51; }
+    .bg-accent { background: #E76F51; }
+    .scroll-area { height: calc(100vh - 60px); overflow-y: auto; padding: 0 20px 90px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #E76F51; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    .tab-btn.active { color: #0F172A; }
+    .tab-btn.active i { transform: scale(1.1); }
+    .tab-btn i { transition: transform 0.2s; }
+    .tab-btn { color: #94a3b8; transition: color 0.2s; }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .divider-line { background: linear-gradient(90deg, transparent, rgba(15,23,42,0.15), transparent); height: 1px; }
+    .shin-chan-emoji { font-size: 100px; line-height: 1; }
+    .doraemon-emoji { font-size: 100px; line-height: 1; }
+  </style>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { ink: '#0F172A', brand: '#F4A261', accent: '#E76F51' } } } }
+  </script>
+<script src="refresh.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <div class="px-5 pt-3 pb-3">
+    <div class="flex items-center justify-between mb-1">
+      <button onclick="goHome()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center">
+        <i class="fas fa-chevron-left text-sm"></i>
+      </button>
+      <h2 class="text-[15px] font-semibold flex items-center gap-1.5">
+        <span class="pulse-dot"></span>
+        摸鱼办
+      </h2>
+      <div class="w-9 h-9"></div>
+    </div>
+    <p class="text-[11px] text-gray-500 text-center mt-1" id="dateLabel">每天一集 · 偷偷休息一下</p>
+  </div>
+
+  <!-- Content -->
+  <div class="scroll-area">
+    <!-- Main hero card: today's manga -->
+    <div class="glass rounded-[28px] p-5 fade-in" id="mangaHeroCard">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Tip card: today's 摸鱼小句 -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fas fa-lightbulb text-amber-500"></i>
+        <p class="text-[11px] uppercase tracking-widest text-gray-500 font-semibold">今日摸鱼小句</p>
+      </div>
+      <p class="text-[14px] ink leading-relaxed font-medium" id="slackQuote">—</p>
+    </div>
+
+    <!-- Manga card (replaces next-day card) -->
+    <div class="glass rounded-[20px] p-4 mt-3 fade-in" id="mangaCard">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Games section -->
+    <div class="mt-3">
+      <p class="text-[11px] uppercase tracking-widest text-gray-500 font-semibold mb-2 px-1">摸鱼小游戏</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="openGame('g2048')" class="glass rounded-2xl p-3 text-center active:scale-95 transition">
+          <div class="text-[32px] mb-1">🧮</div>
+          <p class="text-[12px] font-semibold ink">2048</p>
+        </button>
+        <button onclick="openGame('gspider')" class="glass rounded-2xl p-3 text-center active:scale-95 transition">
+          <div class="text-[32px] mb-1">🕷️</div>
+          <p class="text-[12px] font-semibold ink">蜘蛛纸牌</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game modal (fullscreen overlay) -->
+  <div id="gameModal" class="fixed inset-0 z-[60] hidden" style="background: linear-gradient(180deg, #FFF5E1 0%, #FFE4B5 100%);">
+    <div class="h-full flex flex-col">
+      <div class="px-5 pt-3 pb-3 flex items-center justify-between">
+        <button onclick="closeGame()" class="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center">
+          <i class="fas fa-chevron-left text-sm"></i>
+        </button>
+        <h2 class="text-[15px] font-semibold" id="gameTitle">2048</h2>
+        <div class="w-9 h-9"></div>
+      </div>
+      <div id="gameContent" class="flex-1 overflow-auto px-4 pb-4"></div>
+    </div>
+  </div>
+
+  <!-- bottom tab bar -->
+  <div class="absolute bottom-0 left-0 right-0 pb-7 pt-2.5 px-5">
+    <div class="glass rounded-full flex items-center justify-around py-2.5 px-2 shadow-lg" style="border-radius: 999px;">
+      <button onclick="goPage('home.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-house text-[15px]"></i><span class="text-[10px] font-medium">今日</span>
+      </button>
+      <button onclick="goPage('brief.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-newspaper text-[15px]"></i><span class="text-[10px] font-medium">日报</span>
+      </button>
+      <button onclick="goPage('all-tasks.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-list text-[15px]"></i><span class="text-[10px] font-medium">全部</span>
+      </button>
+      <button onclick="goPage('settings.html')" class="tab-btn flex flex-col items-center gap-0.5 px-3 py-1">
+        <i class="fas fa-gear text-[15px]"></i><span class="text-[10px] font-medium">设置</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 今日摸鱼读物 (从用户分享的百度网盘读取)
+    const MANGA = {
+      title: '今日摸鱼读物',
+      desc: '百度网盘 · 用户分享的漫画',
+      emoji: '📚',
+      url: 'https://pan.baidu.com/s/1qrRV7YZ4HtNuU53GCVD5wQ?pwd=vxlf',
+      pwd: 'vxlf',
+    };
+
+
+    const SLACK_QUOTES = [
+      "工作忙不完，休息一下又不会死。",
+      "5 分钟不算偷懒，叫调节大脑。",
+      "老板不在，咖啡要慢点喝。",
+      "今天已经够努力了，看看小新犒劳自己。",
+      "摸鱼是为了更好地打工。",
+      "高质量的休息 = 高效率的搬砖。",
+    ];
+
+    function dayOfYear() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / 86400000);
+    }
+
+    let TODAY_DATA = null;
+
+    function render() {
+      const quote = SLACK_QUOTES[dayOfYear() % SLACK_QUOTES.length];
+
+      // Render the 摸鱼小句 in the tip card
+      const quoteEl = document.getElementById('slackQuote');
+      if (quoteEl) quoteEl.textContent = '"' + quote + '"';
+
+      // Render the manga hero card (big, eye-catching)
+      const hero = document.getElementById('mangaHeroCard');
+      if (hero) {
+        hero.innerHTML = `
+          <div class="text-center">
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-3">Today's Manga</p>
+            <div class="rounded-[24px] py-7 mb-4" style="background: linear-gradient(135deg, #FFE4B5 0%, #FFC988 100%);">
+              <div style="font-size: 88px; line-height: 1;">${MANGA.emoji}</div>
+            </div>
+            <div class="text-[22px] font-bold ink leading-tight mb-1">${MANGA.title}</div>
+            <div class="text-[13px] text-gray-500 mb-1">${MANGA.desc}</div>
+            <div class="text-[12px] text-gray-400 mb-3">
+              <i class="fas fa-link mr-1"></i>百度网盘 · 密码已预填
+            </div>
+            <button onclick="openManga()" class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-ink text-white text-[14px] font-semibold">
+              <i class="fas fa-external-link-alt text-[12px]"></i> 打开网盘看
+            </button>
+            <button onclick="copyPassword()" class="mt-2 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-amber-50 text-amber-700 text-[12px] font-medium">
+              <i class="fas fa-copy text-[11px]"></i> 复制链接 + 密码 (${MANGA.pwd})
+            </button>
+          </div>
+        `;
+      }
+
+      // Render the smaller manga card
+      const mc = document.getElementById('mangaCard');
+      if (mc) {
+        mc.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="text-[28px]">${MANGA.emoji}</div>
+            <div class="flex-1">
+              <p class="text-[11px] text-gray-500">今日摸鱼读物</p>
+              <p class="text-[14px] font-semibold ink mt-0.5">${MANGA.title}</p>
+            </div>
+            <button onclick="copyPassword()" class="text-[11px] text-amber-600 underline">复制密码</button>
+          </div>
+        `;
+      }
+    }
+
+    function openManga() {
+      window.open(MANGA.url, '_blank', 'noopener');
+    }
+    function copyPassword() {
+      const text = `链接：${MANGA.url}\n密码：${MANGA.pwd}`;
+      const fallback = () => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        showToast('已复制链接和密码');
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast('已复制链接和密码'), fallback);
+      } else {
+        fallback();
+      }
+    }
+    let toastTimer = null;
+    function showToast(msg) {
+      let t = document.getElementById('toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        t.className = 'fixed left-1/2 -translate-x-1/2 bottom-24 bg-ink text-white text-[13px] px-4 py-2 rounded-full shadow-lg z-[100] opacity-0 transition-opacity';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 1800);
+    }
+
+    // ============================================================
+    // ===  摸鱼游戏 (2048 / 蜘蛛纸牌) ====================
+    // ============================================================
+
+    const GAMES = {
+      g2048: { name: '2048', render: render2048 },
+      gspider: { name: '蜘蛛纸牌', render: renderSpider },
+    };
+    let currentGame = null;
+
+    function openGame(key) {
+      // Deactivate all games so stale event handlers don't interfere
+      if (g2048) g2048.isActive = false;
+      if (spider) spider.isActive = false;
+      const g = GAMES[key];
+      if (!g) return;
+      currentGame = key;
+      document.getElementById('gameTitle').textContent = g.name;
+      document.getElementById('gameModal').classList.remove('hidden');
+      g.render();
+    }
+    function closeGame() {
+      document.getElementById('gameModal').classList.add('hidden');
+      if (g2048) g2048.isActive = false;
+      if (spider) spider.isActive = false;
+      currentGame = null;
+    }
+
+    // ---------------- 2048 ----------------
+    let g2048 = null;
+    function render2048() {
+      if (!g2048) g2048 = new Game2048();
+      g2048.render();
+    }
+    class Game2048 {
+      constructor() {
+        this.size = 4;
+        this.grid = [];
+        this.score = 0;
+        this.best = parseInt(localStorage.getItem('todo_2048_best') || '0');
+        this.isActive = false;
+        this.reset();
+      }
+      reset() {
+        this.grid = Array.from({length: this.size}, () => Array(this.size).fill(0));
+        this.score = 0;
+        this.addTile(); this.addTile();
+      }
+      addTile() {
+        const empty = [];
+        for (let r = 0; r < this.size; r++)
+          for (let c = 0; c < this.size; c++)
+            if (this.grid[r][c] === 0) empty.push([r, c]);
+        if (!empty.length) return;
+        const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+        this.grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+      }
+      move(dir) {
+        const old = JSON.stringify(this.grid);
+        let add = 0;
+        for (let i = 0; i < this.size; i++) {
+          let line = [];
+          for (let j = 0; j < this.size; j++) {
+            if (dir === 'L') line.push(this.grid[i][j]);
+            else if (dir === 'R') line.push(this.grid[i][this.size-1-j]);
+            else if (dir === 'U') line.push(this.grid[j][i]);
+            else line.push(this.grid[this.size-1-j][i]);
+          }
+          const filtered = line.filter(x => x);
+          const merged = [];
+          for (let k = 0; k < filtered.length; k++) {
+            if (k+1 < filtered.length && filtered[k] === filtered[k+1]) {
+              merged.push(filtered[k]*2);
+              add += filtered[k]*2;
+              k++;
+            } else merged.push(filtered[k]);
+          }
+          while (merged.length < this.size) merged.push(0);
+          for (let j = 0; j < this.size; j++) {
+            if (dir === 'L') this.grid[i][j] = merged[j];
+            else if (dir === 'R') this.grid[i][this.size-1-j] = merged[j];
+            else if (dir === 'U') this.grid[j][i] = merged[j];
+            else this.grid[this.size-1-j][i] = merged[j];
+          }
+        }
+        if (JSON.stringify(this.grid) !== old) {
+          this.score += add;
+          if (this.score > this.best) {
+            this.best = this.score;
+            localStorage.setItem('todo_2048_best', String(this.best));
+          }
+          this.addTile();
+        }
+      }
+      isOver() {
+        for (let r = 0; r < this.size; r++)
+          for (let c = 0; c < this.size; c++) {
+            if (!this.grid[r][c]) return false;
+            if (c+1 < this.size && this.grid[r][c] === this.grid[r][c+1]) return false;
+            if (r+1 < this.size && this.grid[r][c] === this.grid[r+1][c]) return false;
+          }
+        return true;
+      }
+      tileColor(v) {
+        const m = {
+          2:'bg-amber-50 text-amber-800', 4:'bg-amber-100 text-amber-900',
+          8:'bg-orange-300 text-white', 16:'bg-orange-400 text-white',
+          32:'bg-red-400 text-white', 64:'bg-red-500 text-white',
+          128:'bg-yellow-300 text-yellow-900', 256:'bg-yellow-400 text-white',
+          512:'bg-yellow-500 text-white', 1024:'bg-amber-500 text-white',
+          2048:'bg-gradient-to-br from-yellow-400 to-red-500 text-white',
+        };
+        return m[v] || (v ? 'bg-purple-500 text-white' : 'bg-white/30');
+      }
+      render() {
+        this.isActive = true;
+        const c = document.getElementById('gameContent');
+        c.innerHTML = `
+          <div class="flex justify-between items-center mb-3 px-1">
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">分数</div>
+              <div class="text-[20px] font-bold ink">${this.score}</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-gray-500">最高</div>
+              <div class="text-[20px] font-bold text-amber-600">${this.best}</div>
+            </div>
+            <button onclick="g2048.reset();g2048.render()" class="px-4 py-2 rounded-xl bg-ink text-white text-[13px] font-semibold">新局</button>
+          </div>
+          <div class="grid grid-cols-4 gap-2 bg-amber-900/10 p-2 rounded-2xl">
+            ${this.grid.flat().map(v => `<div class="aspect-square rounded-lg flex items-center justify-center text-[20px] font-bold ${this.tileColor(v)}">${v||''}</div>`).join('')}
+          </div>
+          ${this.isOver() ? '<div class="mt-4 text-center"><p class="text-amber-600 text-[16px] font-bold mb-2">游戏结束</p><button onclick="g2048.reset();g2048.render()" class="px-5 py-2.5 rounded-xl bg-ink text-white text-[13px] font-semibold">再来一局</button></div>' : ''}
+          <p class="text-[11px] text-gray-500 text-center mt-3">滑动屏幕 · 合并相同数字 · 达到 2048</p>
+        `;
+        this.attachSwipe();
+      }
+      attachSwipe() {
+        const c = document.getElementById('gameContent');
+        if (c.dataset.swipe2048) return;
+        c.dataset.swipe2048 = '1';
+        let sx, sy;
+        const self = this;
+        c.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive: true});
+        c.addEventListener('touchend', e => {
+          if (!self.isActive) return;
+          const dx = e.changedTouches[0].clientX - sx;
+          const dy = e.changedTouches[0].clientY - sy;
+          if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+          if (Math.abs(dx) > Math.abs(dy)) self.move(dx > 0 ? 'R' : 'L');
+          else self.move(dy > 0 ? 'D' : 'U');
+          self.render();
+        });
+        // Keyboard for desktop
+        document.addEventListener('keydown', this.keyHandler = e => {
+          if (!self.isActive) return;
+          const k = e.key;
+          if (k === 'ArrowLeft') self.move('L');
+          else if (k === 'ArrowRight') self.move('R');
+          else if (k === 'ArrowUp') self.move('U');
+          else if (k === 'ArrowDown') self.move('D');
+          else return;
+          self.render();
+        });
+      }
+    }
+
+    // ---------------- 蜘蛛纸牌 ----------------
+    let spider = null;
+    function renderSpider() {
+      if (!spider) spider = new SpiderGame();
+      spider.render();
+    }
+    class SpiderGame {
+      constructor() {
+        this.numCols = 8;
+        this.deck = [];
+        this.columns = [];
+        this.selected = null; // {src, count}
+        this.completed = 0;
+        this.moves = 0;
+        this.startTime = Date.now();
+        this.isActive = false;
+        this.init();
+      }
+      init() {
+        this.deck = [];
+        // 2-suit: 2 copies of each rank (♠ + ♥) = 52 cards
+        for (const [s, c] of [['♠', 'b'], ['♥', 'r']]) {
+          for (let r = 1; r <= 13; r++) {
+            for (let copy = 0; copy < 2; copy++) {
+              this.deck.push({rank: r, suit: s, color: c});
+            }
+          }
+        }
+        // Shuffle
+        for (let i = this.deck.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+        }
+        // Deal 8 columns, 6 each = 48 cards
+        this.columns = Array.from({length: this.numCols}, () => []);
+        for (let i = 0; i < 48; i++) this.columns[i % this.numCols].push(this.deck[i]);
+      }
+      topCard(col) {
+        const c = this.columns[col];
+        return c.length ? c[c.length - 1] : null;
+      }
+      // How many cards from the BOTTOM are a movable sequence (descending SAME COLOR, since 2-suit)
+      // Layout: flex-col, c[length-1] is at the BOTTOM of display = TOP of stack = the SMALLEST
+      // User picks up from c[length-1] (BOTTOM of screen), movable sequence extends UPWARD
+      // For valid sequence: c[i] (ABOVE) is 1 LARGER than c[i+1] (BELOW) AND same color (= same suit in 2-suit)
+      // Example: 2♠-3♠ stacked → c[length-2]=3♠, c[length-1]=2♠; check: 3 === 2+1 ✓ and color 'b' === 'b' ✓
+      // Standard Spider rule: a run can only be moved as a unit if it's same-suit
+      movableCount(col) {
+        const c = this.columns[col];
+        if (!c.length) return 0;
+        let n = 1;
+        for (let i = c.length - 2; i >= 0; i--) {
+          // c[i] is ABOVE c[i+1] in display; valid if c[i] is 1 larger AND same color (same suit)
+          if (c[i].rank === c[i+1].rank + 1 && c[i].color === c[i+1].color) n++;
+          else break;
+        }
+        return n;
+      }
+      canPlace(src, count, dst) {
+        if (src === dst) return false;
+        if (this.columns[dst].length === 0) return true;
+        // The BOTTOMMOST card of the moving sequence (in real life) is placed FIRST on the destination
+        // In user's mental model (BOTTOM of screen = TOP of stack), this is c[src][length-count]
+        // (the LARGEST in the moving = first card placed, not the smallest at c[length-1])
+        // Example: 2-3 moving to 4 → first=3 (BOTTOM in stack), t=4, check 4 === 3+1 ✓
+        const first = this.columns[src][this.columns[src].length - count];
+        const t = this.columns[dst][this.columns[dst].length - 1];
+        return t.rank === first.rank + 1;
+      }
+      selectOrMove(col) {
+        if (this.selected === null) {
+          const count = this.movableCount(col);
+          if (count === 0) return;
+          this.selected = {src: col, count};
+        } else {
+          if (this.selected.src === col) {
+            this.selected = null;
+          } else if (this.canPlace(this.selected.src, this.selected.count, col)) {
+            const moving = this.columns[this.selected.src].splice(-this.selected.count);
+            this.columns[col] = this.columns[col].concat(moving);
+            this.moves++;
+            this.selected = null;
+            this.checkComplete(col);
+          } else {
+            // try selecting this column instead
+            const count = this.movableCount(col);
+            if (count > 0) this.selected = {src: col, count};
+            else this.selected = null;
+          }
+        }
+        this.render();
+      }
+      checkComplete(col) {
+        const c = this.columns[col];
+        if (c.length < 13) return;
+        // In user's mental model (BOTTOM of screen = TOP of stack = SMALLEST):
+        // c[0] = K (largest, TOP of display = BOTTOM of stack = first placed)
+        // c[length-1] = A (smallest, BOTTOM of display = TOP of stack = last placed)
+        // last[0] = c[length-13] = K = 13, last[1] = Q = 12, ..., last[12] = c[length-1] = A = 1
+        // Standard rule: K-to-A removal requires SAME SUIT (same color in 2-suit)
+        const last = c.slice(-13);
+        const firstColor = last[0].color;
+        for (let i = 0; i < 13; i++) {
+          if (last[i].rank !== 13 - i) return;
+          if (last[i].color !== firstColor) return;  // All 13 must be same suit
+        }
+        this.columns[col] = c.slice(0, c.length - 13);
+        this.completed++;
+      }
+      isStuck() {
+        for (let src = 0; src < this.numCols; src++) {
+          const cnt = this.movableCount(src);
+          if (cnt === 0) continue;
+          for (let dst = 0; dst < this.numCols; dst++) {
+            if (this.canPlace(src, cnt, dst)) return false;
+          }
+        }
+        return true;
+      }
+      isWin() { return this.completed >= 3; }
+      rankLabel(r) { return r === 1 ? 'A' : r === 11 ? 'J' : r === 12 ? 'Q' : r === 13 ? 'K' : String(r); }
+      render() {
+        this.isActive = true;
+        const container = document.getElementById('gameContent');
+        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+        const mm = String(Math.floor(elapsed/60)).padStart(2,'0');
+        const ss = String(elapsed%60).padStart(2,'0');
+        let html = `
+          <div class="flex justify-between items-center mb-2 px-1 gap-1">
+            <div>
+              <div class="text-[9px] uppercase text-gray-500">完成</div>
+              <div class="text-[16px] font-bold ink">${this.completed}/3</div>
+            </div>
+            <div>
+              <div class="text-[9px] uppercase text-gray-500">时间</div>
+              <div class="text-[14px] font-bold ink">${mm}:${ss}</div>
+            </div>
+            <div>
+              <div class="text-[9px] uppercase text-gray-500">步数</div>
+              <div class="text-[16px] font-bold text-amber-600">${this.moves}</div>
+            </div>
+            <button onclick="spider=new SpiderGame();spider.render()" class="px-3 py-1.5 rounded-xl bg-ink text-white text-[11px] font-semibold">新局</button>
+          </div>
+          <div class="grid gap-1" style="grid-template-columns: repeat(${this.numCols}, minmax(0, 1fr));">
+        `;
+        for (let col = 0; col < this.numCols; col++) {
+          const cArr = this.columns[col];
+          const sel = this.selected && this.selected.src === col;
+          const selCount = sel ? this.selected.count : 0;
+          const movCnt = this.movableCount(col);
+          html += `<div class="flex flex-col">`;
+          // Empty column placeholder
+          if (cArr.length === 0) {
+            html += `<button onclick="spider.selectOrMove(${col})" class="w-full h-16 rounded-lg border-2 border-dashed border-gray-300 bg-white/30"></button>`;
+          } else {
+            for (let i = 0; i < cArr.length; i++) {
+              const card = cArr[i];
+              const fromBottom = cArr.length - i;
+              const isInSel = sel && fromBottom <= selCount;
+              const isMovable = !sel && fromBottom <= movCnt;
+              const textColor = card.color === 'r' ? 'text-red-600' : 'text-gray-900';
+              const bg = isInSel ? 'bg-amber-200 ring-2 ring-amber-500' : isMovable ? 'bg-white ring-1 ring-amber-300/50' : 'bg-white';
+              // Apply -mb-6 to all cards (including the last one) so the bottom card (selectable) is visually attached, no 24px gap above
+              const mb = '-mb-6';
+              const clickHandler = i === cArr.length - 1 ? `onclick="spider.selectOrMove(${col})"` : '';
+              // items-end + pb-0.5 keeps rank/suit at the BOTTOM of each card so the BOTTOM card (selectable) shows its label clearly even when its top 24px is covered by the card above
+              html += `<div ${clickHandler} class="w-full h-12 ${mb} ${bg} ${textColor} rounded-md border border-gray-300 shadow-sm flex items-end justify-between px-1.5 pb-0.5 text-[11px] font-bold cursor-pointer">`;
+              html += `<span>${this.rankLabel(card.rank)}</span><span class="text-[14px]">${card.suit}</span>`;
+              html += `</div>`;
+            }
+          }
+          html += `</div>`;
+        }
+        html += `</div>`;
+        if (this.isWin()) {
+          html += `<div class="mt-3 text-center bg-green-50 p-3 rounded-2xl"><p class="text-green-700 font-bold mb-1">🎉 全部完成！</p><p class="text-[12px] text-gray-600">用时 ${mm}:${ss} · ${this.moves} 步</p><button onclick="spider=new SpiderGame();spider.render()" class="mt-2 px-4 py-2 rounded-xl bg-ink text-white text-[12px] font-semibold">再来一局</button></div>`;
+        } else if (this.isStuck()) {
+          html += `<div class="mt-3 text-center"><p class="text-amber-600 text-[13px] font-semibold mb-2">卡住了，新开一局吧</p><button onclick="spider=new SpiderGame();spider.render()" class="px-4 py-2 rounded-xl bg-ink text-white text-[12px] font-semibold">新局</button></div>`;
+        } else {
+          html += `<p class="text-[10px] text-gray-500 text-center mt-3">点最下面的牌选中 · 点另一列移动 · 同花色才能一起移</p>`;
+        }
+        container.innerHTML = html;
+      }
+    }
+
+    function goHome() { window.location.href = 'home.html'; }
+    function goPage(p) { window.location.href = p; }
+
+    render();
+  </script>
+</body>
+</html>
